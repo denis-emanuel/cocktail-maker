@@ -1,0 +1,6 @@
+#ifndef PROJECT_CONSTANTS_H
+#define PROJECT_CONSTANTS_H
+
+#define MAIN_TASK_PERIOD_MS 1000
+
+#endif
