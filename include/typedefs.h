@@ -47,24 +47,14 @@ enum soda_drinks
     SPRITE
 };
 
-enum cocktails {
-    HUGO,
-    MOJITO,
-    GIN_TONIC,
-    VODKA_ORANGE,
-    VODKA_RED_BULL,
-    MARGARITA,
-    COSMOPOLITAN,  
-};
-
 struct ingredient {
     int type;
     int amount_ml;
 };
 
 struct cocktail {
-    cocktails name;
-    int amount[5];
+    String name;
+    ingredient ingredients[NUM_OF_PUMPS];
 };
 
 

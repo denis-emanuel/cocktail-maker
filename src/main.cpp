@@ -1,12 +1,13 @@
 #include <Arduino.h>
 #include <TimerOne.h>
-#include "../include/constants.h"
+#include "../include/recipes.h"
 #include "../include/functions.h"
-#include "../include/typedefs.h"
 
 /* Global Variables */
 /* Keep track of global state */
 globalState currentGlobalState = INIT;
+
+cocktail currentCocktail;
 
 void setup() {
   /* Initialize timer1 to count 10ms and use callback to function */
@@ -24,6 +25,9 @@ void OS_10mstask() {
   switch(currentGlobalState)
   {
     case INIT:
+      /* Set default cocktail */
+      currentCocktail = cocktailList[HUGO];
+
       /* Enter by default into AUTOMATIC state */
       currentGlobalState = AUTO;
       break;

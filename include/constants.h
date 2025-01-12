@@ -3,6 +3,8 @@
 
 #define OS_TASK_PERIOD_MS 10
 
+#define NUM_OF_PUMPS 6
+
 #define ALCOHOL_START 20
 #define ALCOHOL_END 39
 #define SYRUP_START 40
