@@ -1,6 +1,15 @@
 #ifndef PROJECT_CONSTANTS_H
 #define PROJECT_CONSTANTS_H
 
-#define MAIN_TASK_PERIOD_MS 1000
+#define OS_TASK_PERIOD_MS 10
+
+#define ALCOHOL_START 20
+#define ALCOHOL_END 39
+#define SYRUP_START 40
+#define SYRUP_END 59
+#define JUICE_START 60
+#define JUICE_END 79
+#define SODA_START 80
+#define SODA_END 99
 
 #endif
