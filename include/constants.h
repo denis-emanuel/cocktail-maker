@@ -14,4 +14,6 @@
 #define SODA_START 80
 #define SODA_END 99
 
+#define NOT_ASSIGNED "N/A"
+
 #endif

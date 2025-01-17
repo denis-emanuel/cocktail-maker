@@ -7,7 +7,16 @@
 /* Keep track of global state */
 globalState currentGlobalState = INIT;
 
-cocktail currentCocktail;
+Ingredient ginTonicIngredients[2] = {
+  Ingredient(IngredientName::GIN, 50),
+  Ingredient(IngredientName::TONIC, 150)
+};
+
+Recipe recipes[1] = {
+  Recipe("Gin Tonic", 2, ginTonicIngredients)
+};
+
+CocktailMaker cocktailMaker;
 
 void setup() {
   /* Initialize timer1 to count 10ms and use callback to function */
@@ -25,11 +34,11 @@ void OS_10mstask() {
   switch(currentGlobalState)
   {
     case INIT:
-      /* Set default cocktail */
-      currentCocktail = cocktailList[HUGO];
-
       /* Enter by default into AUTOMATIC state */
       currentGlobalState = AUTO;
+
+      cocktailMaker.setRecipe(recipes[0]);
+      cocktailMaker.mixCocktail();
       break;
       
     case AUTO:

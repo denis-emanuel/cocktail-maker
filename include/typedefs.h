@@ -1,6 +1,8 @@
 #ifndef TYPEDEFS_H
 #define TYPEDEFS_H
 
+#include <Hashtable.h>
+
 enum globalState {
     INIT,
     AUTO,
@@ -11,51 +13,55 @@ enum globalState {
     PAUSED
 };
 
-enum ingredient_type
-{
+enum class IngredientName {
+    NO_NAME,
+    GIN,
+    RUM,
+    TEQUILA,
+    WHISKEY,
+    VERMOUTH,
+    LIME_JUICE,
+    LEMON_JUICE,
+    ORANGE_JUICE,
+    CRANBERRY_JUICE,
+    SODA,
+    TONIC,
+    GINGER_ALE,
+    COKE
+};
+
+enum class Category {
     ALCOHOL,
     SYRUP,
     JUICE,
-    SODA
+    SODA,
+    OTHER
 };
 
-enum alcohol_drinks
-{
-    VODKA = 20,
-    PROSECCO,
-    WHISKY
-};
+// extern Hashtable<Category, IngredientName[]> ingredientCategoryMap;
 
-enum syrup_drinks
-{
-    SUGAR_SYRUP = 40,
-    GRENADINE,
-    BLUE_CURACAO
-};
+// void initializeIngredientCategoryMap() {
+//     ingredientCategoryMap.put(Category::ALCOHOL, {
+//         IngredientName::GIN,
+//         IngredientName::RUM,
+//         IngredientName::TEQUILA,
+//         IngredientName::WHISKEY,
+//         IngredientName::VERMOUTH
+//     });
 
-enum juice_drinks
-{
-    ORANGE_JUICE = 60,
-    LIME_JUICE
-};
+//     ingredientCategoryMap.put(Category::SYRUP, {
+//         IngredientName::LIME_JUICE,
+//         IngredientName::LEMON_JUICE,
+//         IngredientName::ORANGE_JUICE,
+//         IngredientName::CRANBERRY_JUICE
+//     });
 
-enum soda_drinks
-{
-    TONIC = 80,
-    RED_BULL,
-    COLA,
-    SPRITE
-};
-
-struct ingredient {
-    int type;
-    int amount_ml;
-};
-
-struct cocktail {
-    String name;
-    ingredient ingredients[NUM_OF_PUMPS];
-};
-
+//     ingredientCategoryMap.put(Category::SODA, {
+//         IngredientName::SODA,
+//         IngredientName::TONIC,
+//         IngredientName::GINGER_ALE,
+//         IngredientName::COKE
+//     });
+// };
 
 #endif
