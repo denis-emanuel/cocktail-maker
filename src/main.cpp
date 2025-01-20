@@ -10,24 +10,38 @@
 /* Weight sensor pins */
 #define BUTTONS_PIN A0
 #define POT_SELECT_PIN A1
+#define POT_VALUE_AUTO_MAX 999
+#define POT_VALUE_AUTO_MIN 100
 
 /* Timers */
 #define SCALE_READ_MS 200
 #define BUTTONS_READ_MS 20
 #define POT_READ_MS 100
+#define LCD_UPDATE_MS 100
 
 /* Configuration */
 unsigned int buttonsReadingCounter = 0;
-const unsigned int BUTTONS_THRESHOLDS[NO_BUTTON] = {100, 550, 700, 790, 900};
+const unsigned int BUTTONS_THRESHOLDS[NO_BUTTON] = {100, 550, 700};
 unsigned int potReadingCounter = 0;
-const unsigned int POT_THRESHOLDS[NO_BUTTON] = {200, 400, 600, 800, 1025};
+const unsigned int POT_THRESHOLDS[NO_BUTTON] = {200, 400, 600};
+unsigned int lcdUpdateCounter = 0;
+
+/* Menu arrays */
 
 /* Keep track of global state */
 globalState currentGlobalState = INIT;
+globalState previousGlobalState = INIT;
 
 CocktailMaker cocktailMaker;
 LCDController* lcd;
 ScaleController* scale; 
+
+/* Flags */
+bool lcdUpdateFlag = true;
+
+/* Global Variables */
+unsigned int potValue = 0;
+bool lockSelectModeButton = false;
 
 /* Function prototypes */
 buttons readButtons();
@@ -49,6 +63,43 @@ void setup() {
 }
 
 void loop() {
+  if(lcdUpdateFlag == true) {
+    switch (currentGlobalState)
+    {
+      case INIT:
+        lcd->printFirstLine("Cocktail Maker");
+        lcd->printSecondLine("Initializing");
+        break;
+      case AUTO:
+        lcd->printFirstLine("AUTO Mode       ");
+        lcd->printSecondLine("ml: ");
+        lcd->lcdClearAt(7, 1);
+        lcd->printAtCursor(4, 1, potValue);
+        break;
+      case SELECT_MODE:
+        lcd->printFirstLine("Select Mode :   ");
+        lcd->printSecondLine(functionModes[potValue]);
+        break;
+      case MANUAL:
+        lcd->printFirstLine("Cocktail Maker  ");
+        lcd->printSecondLine("Manual          ");
+        break;
+      case SETUP:
+        lcd->printFirstLine("Cocktail Maker  ");
+        lcd->printSecondLine("Setup           ");
+        break;
+      case SETUP_COCKTAIL:
+        lcd->printFirstLine("Cocktail Maker  ");
+        lcd->printSecondLine("Setup Cocktail  ");
+        break;
+      case CLEAN:
+        lcd->printFirstLine("Cocktail Maker  ");
+        lcd->printSecondLine("Cleaning       ");
+        break;
+    }
+    lcdUpdateFlag = false;
+  }
+    
 }
 
 void OS_10mstask() {
@@ -56,23 +107,57 @@ void OS_10mstask() {
   switch(currentGlobalState)
   {
     case INIT:
-      Serial.println("Entering AUTO state");
-      /* Enter by default into AUTOMATIC state */
+      lcdUpdateFlag = true;
       currentGlobalState = AUTO;
-
-      // cocktailMaker.setRecipe(recipes[0]);
-      // cocktailMaker.mixCocktail();
       break;
       
     case AUTO:
-      // scale.incrementReadingCounter();
-      // Serial.println("reading: " + scale.getReadingCounter());
-      // if (scale.getReadingCounter() >= SCALE_READ_MS / OS_TASK_PERIOD_MS) {
-      //   /* What to do in loop */
-      //   Serial.println(scale.read());
+      
+      buttonsReadingCounter++;
+      if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
+        /* What to do in loop */
+        buttons button = readButtons();
+        
+        switch(button) {
+          case BUTTON_OK:
+          
+            break;
+          case BUTTON_POUR:
+          
+            break;
+          case BUTTON_SELECT_MODE:
+            previousGlobalState = currentGlobalState;
+            if (lockSelectModeButton == false) {
+              currentGlobalState = SELECT_MODE;
+              lockSelectModeButton = true;
+            }
+            break;
+          case NO_BUTTON:
+            lockSelectModeButton = false;
+            break;
+        }
 
-      //   scale.resetReadingCounter();
-      // }
+        buttonsReadingCounter = 0;
+      }
+
+      potReadingCounter++;
+      if (potReadingCounter >= POT_READ_MS / OS_TASK_PERIOD_MS) {
+        /* What to do in loop */
+        potValue = map(analogRead(POT_SELECT_PIN), 0, 1023, 4, 39) * 25;
+
+        potReadingCounter = 0;
+      }
+
+      break;
+    case SELECT_MODE:
+      /* Select what mode you want with the potentiometer */
+      potReadingCounter++;
+      if (potReadingCounter >= POT_READ_MS / OS_TASK_PERIOD_MS) {
+        /* What to do in loop */
+        potValue = map(analogRead(POT_SELECT_PIN), 0, 1023, 0, NO_OF_STATES - 1);
+
+        potReadingCounter = 0;
+      }
 
       buttonsReadingCounter++;
       if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
@@ -80,76 +165,160 @@ void OS_10mstask() {
         buttons button = readButtons();
         
         switch(button) {
-          case BUTTON_0:
-            Serial.println("Button 0 pressed");
+          case BUTTON_OK:
+            currentGlobalState = static_cast<globalState>(potValue);
             break;
-          case BUTTON_1:
-            Serial.println("Button 1 pressed");
-            break;
-          case BUTTON_2:
-            Serial.println("Button 2 pressed");
-            break;
-          case BUTTON_3:
-            Serial.println("Button 3 pressed");
-            break;
-          case BUTTON_4:
-            Serial.println("Button 4 pressed");
+          case BUTTON_SELECT_MODE:
+            if(lockSelectModeButton == false){
+              currentGlobalState = previousGlobalState;
+              lockSelectModeButton = true;
+            }
             break;
           case NO_BUTTON:
+            lockSelectModeButton = false;
             break;
         }
 
         buttonsReadingCounter = 0;
       }
-
-      // potReadingCounter++;
-      // if (potReadingCounter >= POT_READ_MS / OS_TASK_PERIOD_MS) {
-      //   /* What to do in loop */
-      //   unsigned int potValue = analogRead(POT_SELECT_PIN);
-
-      //   if (potValue < POT_THRESHOLDS[OPTION_0]) {
-      //     Serial.println("Potentiometer 0");
-      //   } else if (potValue < POT_THRESHOLDS[OPTION_1]) {
-      //     Serial.println("Potentiometer 1");
-      //   } else if (potValue < POT_THRESHOLDS[OPTION_2]) {
-      //     Serial.println("Potentiometer 2");
-      //   } else if (potValue < POT_THRESHOLDS[OPTION_3]) {
-      //     Serial.println("Potentiometer 3");
-      //   } else if (potValue < POT_THRESHOLDS[OPTION_4]) {
-      //     Serial.println("Potentiometer 4");
-      //   }
-
-      //   potReadingCounter = 0;
-      // }
-
       break;
-
     case MANUAL:
+      buttonsReadingCounter++;
+      if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
+        /* What to do in loop */
+        buttons button = readButtons();
+        
+        switch(button) {
+          case BUTTON_OK:
+          
+            break;
+          case BUTTON_POUR:
+          
+            break;
+          case BUTTON_SELECT_MODE:
+            previousGlobalState = currentGlobalState;
+            if (lockSelectModeButton == false) {
+              currentGlobalState = SELECT_MODE;
+              lockSelectModeButton = true;
+            }
+            break;
+          case NO_BUTTON:
+            lockSelectModeButton = false;
+            break;
+        }
+
+        buttonsReadingCounter = 0;
+      }
       break;
     case SETUP:
+      buttonsReadingCounter++;
+      if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
+        /* What to do in loop */
+        buttons button = readButtons();
+        
+        switch(button) {
+          case BUTTON_OK:
+          
+            break;
+          case BUTTON_POUR:
+          
+            break;
+          case BUTTON_SELECT_MODE:
+            previousGlobalState = currentGlobalState;
+            if (lockSelectModeButton == false) {
+              currentGlobalState = SELECT_MODE;
+              lockSelectModeButton = true;
+            }
+            break;
+          case NO_BUTTON:
+            lockSelectModeButton = false;
+            break;
+        }
+
+        buttonsReadingCounter = 0;
+      }
       break;
     case SETUP_COCKTAIL:
+      buttonsReadingCounter++;
+      if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
+        /* What to do in loop */
+        buttons button = readButtons();
+        
+        switch(button) {
+          case BUTTON_OK:
+          
+            break;
+          case BUTTON_POUR:
+          
+            break;
+          case BUTTON_SELECT_MODE:
+            previousGlobalState = currentGlobalState;
+            if (lockSelectModeButton == false) {
+              currentGlobalState = SELECT_MODE;
+              lockSelectModeButton = true;
+            }
+            break;
+          case NO_BUTTON:
+            lockSelectModeButton = false;
+            break;
+        }
+
+        buttonsReadingCounter = 0;
+      }
       break;
     case CLEAN:
+      buttonsReadingCounter++;
+      if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
+        /* What to do in loop */
+        buttons button = readButtons();
+        
+        switch(button) {
+          case BUTTON_OK:
+          
+            break;
+          case BUTTON_POUR:
+          
+            break;
+          case BUTTON_SELECT_MODE:
+            previousGlobalState = currentGlobalState;
+            if (lockSelectModeButton == false) {
+              currentGlobalState = SELECT_MODE;
+              lockSelectModeButton = true;
+            }
+            break;
+          case NO_BUTTON:
+            lockSelectModeButton = false;
+            break;
+        }
+
+        buttonsReadingCounter = 0;
+      }
       break;
     case PAUSED:
       break;
+    case NO_OF_STATES:
+      break;
+    default:
+      break;
+  }
+
+  /* Update LCD */
+  lcdUpdateCounter++;
+  if (lcdUpdateCounter >= LCD_UPDATE_MS / OS_TASK_PERIOD_MS) {
+    lcdUpdateFlag = true;
+    lcdUpdateCounter = 0;
   }
 }
 
 buttons readButtons() {
   unsigned int buttonValue = analogRead(BUTTONS_PIN);
 
-  if (buttonValue < BUTTONS_THRESHOLDS[BUTTON_0]) {
-    return BUTTON_0;
-  } else if (buttonValue < BUTTONS_THRESHOLDS[BUTTON_1]) {
-    return BUTTON_1;
-  } else if (buttonValue < BUTTONS_THRESHOLDS[BUTTON_2]) {
-    return BUTTON_2;
-  } else if (buttonValue < BUTTONS_THRESHOLDS[BUTTON_3]) {
-    return BUTTON_3;
-  } else if (buttonValue < BUTTONS_THRESHOLDS[BUTTON_4]) {
-    return BUTTON_4;
+  if (buttonValue < BUTTONS_THRESHOLDS[BUTTON_OK]) {
+    return BUTTON_OK;
+  } else if (buttonValue < BUTTONS_THRESHOLDS[BUTTON_POUR]) {
+    return BUTTON_POUR;
+  } else if (buttonValue < BUTTONS_THRESHOLDS[BUTTON_SELECT_MODE]) {
+    return BUTTON_SELECT_MODE;
   } else {
     return NO_BUTTON;
   }

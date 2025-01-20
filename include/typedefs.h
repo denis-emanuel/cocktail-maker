@@ -4,30 +4,30 @@
 #include <Hashtable.h>
 
 enum buttons {
-    BUTTON_0,
-    BUTTON_1,
-    BUTTON_2,
-    BUTTON_3,
-    BUTTON_4,
+    BUTTON_OK,
+    BUTTON_POUR,
+    BUTTON_SELECT_MODE,
     NO_BUTTON
 };
 
-enum potentiometer_options {
-    OPTION_0,
-    OPTION_1,
-    OPTION_2,
-    OPTION_3,
-    OPTION_4,
-};
-
 enum globalState {
-    INIT,
     AUTO,
     MANUAL,
     SETUP,
     SETUP_COCKTAIL,
     CLEAN,
-    PAUSED
+    NO_OF_STATES,
+    INIT,
+    PAUSED,
+    SELECT_MODE
+};
+
+const char* functionModes[NO_OF_STATES] = {
+    "AUTO            ", 
+    "MANUAL          ", 
+    "SETUP           ", 
+    "SETUP_COCKTAIL  ", 
+    "CLEAN           "
 };
 
 enum class IngredientName {

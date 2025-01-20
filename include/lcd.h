@@ -29,6 +29,21 @@ class LCDController {
             this->lcd.setCursor(0, 1);
             this->lcd.print(text);
         }
+        
+        void printAtCursor(unsigned int cursorX, unsigned int cursorY, char* text) {
+            this->lcd.setCursor(cursorX, cursorY);
+            this->lcd.print(text);
+        }
+
+        void printAtCursor(unsigned int cursorX, unsigned int cursorY, unsigned int number) {
+            this->lcd.setCursor(cursorX, cursorY);
+            this->lcd.print(number);
+        }
+
+        void lcdClearAt(unsigned int cursorX, unsigned int cursorY) {
+            this->lcd.setCursor(cursorX, cursorY);
+            this->lcd.print("                    ");
+        }
 };
 
 #endif
