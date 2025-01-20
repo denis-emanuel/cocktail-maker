@@ -18,6 +18,9 @@ enum globalState {
     CLEAN,
     NO_OF_STATES,
     INIT,
+    POURING,
+    SCALE_IS_EMPTY,
+    PUMP_IS_EMPTY,
     PAUSED,
     SELECT_MODE
 };

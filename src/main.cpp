@@ -18,6 +18,9 @@
 #define BUTTONS_READ_MS 20
 #define POT_READ_MS 100
 #define LCD_UPDATE_MS 100
+#define SCALE_EMPTY_ERROR_MS 3000
+#define PUMP_EMPTY_ERROR_MS 3000
+#define POURING_TIMEOUT_MS 5000
 
 /* Configuration */
 unsigned int buttonsReadingCounter = 0;
@@ -25,6 +28,9 @@ const unsigned int BUTTONS_THRESHOLDS[NO_BUTTON] = {100, 550, 700};
 unsigned int potReadingCounter = 0;
 const unsigned int POT_THRESHOLDS[NO_BUTTON] = {200, 400, 600};
 unsigned int lcdUpdateCounter = 0;
+unsigned int scaleEmptyErrorCounter = 0;
+unsigned int pumpEmptyErrorCounter = 0;
+unsigned int pouringTimeoutCounter = 0;
 
 /* Menu arrays */
 
@@ -41,6 +47,7 @@ bool lcdUpdateFlag = true;
 
 /* Global Variables */
 unsigned int potValue = 0;
+unsigned int scaleValue = 0;
 bool lockSelectModeButton = false;
 
 /* Function prototypes */
@@ -92,6 +99,18 @@ void loop() {
         lcd->printFirstLine("Cocktail Maker  ");
         lcd->printSecondLine("Setup Cocktail  ");
         break;
+      case POURING:
+        lcd->printFirstLine("Cocktail Maker  ");
+        lcd->printSecondLine("Pouring         ");
+        break;
+      case SCALE_IS_EMPTY:  
+        lcd->printFirstLine("Scale is empty! ");
+        lcd->printSecondLine("                ");
+        break;
+      case PUMP_IS_EMPTY:  
+        lcd->printFirstLine("Pump is empty!  ");
+        lcd->printSecondLine("                ");
+        break;
       case CLEAN:
         lcd->printFirstLine("Cocktail Maker  ");
         lcd->printSecondLine("Cleaning       ");
@@ -120,7 +139,14 @@ void OS_10mstask() {
         
         switch(button) {
           case BUTTON_OK:
-          
+            
+            scaleValue = scale->read();
+            if(scaleValue < 10){
+              currentGlobalState = SCALE_IS_EMPTY;
+            }
+            else{
+              currentGlobalState = POURING;
+            }
             break;
           case BUTTON_POUR:
           
@@ -292,6 +318,29 @@ void OS_10mstask() {
         }
 
         buttonsReadingCounter = 0;
+      }
+      break;
+    case POURING:
+      pouringTimeoutCounter++;
+      if (pouringTimeoutCounter >= POURING_TIMEOUT_MS / OS_TASK_PERIOD_MS) {
+        pouringTimeoutCounter = 0;
+        currentGlobalState = PUMP_IS_EMPTY;
+      }
+      //When pouring algo is over
+      //currentGlobalState = AUTO;
+      break;
+    case SCALE_IS_EMPTY:
+      scaleEmptyErrorCounter++;
+      if (scaleEmptyErrorCounter >= SCALE_EMPTY_ERROR_MS / OS_TASK_PERIOD_MS) {
+        scaleEmptyErrorCounter = 0;
+        currentGlobalState = AUTO;
+      }
+      break;
+    case PUMP_IS_EMPTY:
+      pumpEmptyErrorCounter++;
+      if (pumpEmptyErrorCounter >= PUMP_EMPTY_ERROR_MS / OS_TASK_PERIOD_MS) {
+        pumpEmptyErrorCounter = 0;
+        currentGlobalState = AUTO;
       }
       break;
     case PAUSED:
