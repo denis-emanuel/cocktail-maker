@@ -14,6 +14,10 @@
 #define SODA_START 80
 #define SODA_END 99
 
+/* Weight sensor */
+#define LOADCELL_DOUT_PIN 2
+#define LOADCELL_SCK_PIN 3
+
 #define NOT_ASSIGNED "N/A"
 
 #endif

@@ -176,5 +176,14 @@ class CocktailMaker {
         }
 };
 
+/* Ingredients and recipes */
+Ingredient ginTonicIngredients[2] = {
+  Ingredient(IngredientName::GIN, 50),
+  Ingredient(IngredientName::TONIC, 150)
+};
+
+Recipe recipes[1] = {
+  Recipe("Gin Tonic", 2, ginTonicIngredients)
+};
 
 #endif

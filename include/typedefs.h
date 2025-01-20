@@ -3,6 +3,23 @@
 
 #include <Hashtable.h>
 
+enum buttons {
+    BUTTON_0,
+    BUTTON_1,
+    BUTTON_2,
+    BUTTON_3,
+    BUTTON_4,
+    NO_BUTTON
+};
+
+enum potentiometer_options {
+    OPTION_0,
+    OPTION_1,
+    OPTION_2,
+    OPTION_3,
+    OPTION_4,
+};
+
 enum globalState {
     INIT,
     AUTO,
