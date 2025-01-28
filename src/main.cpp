@@ -13,6 +13,19 @@
 #define POT_VALUE_AUTO_MAX 999
 #define POT_VALUE_AUTO_MIN 100
 
+/* Shift register pins */
+#define SHIFT_REGISTER_DATA_PIN 8
+#define SHIFT_REGISTER_LATCH_PIN 9
+#define SHIFT_REGISTER_CLOCK_PIN 10
+
+/* Pump definitions */
+#define PUMP_1 (1<<0)
+#define PUMP_2 (1<<1)
+#define PUMP_3 (1<<2)
+#define PUMP_4 (1<<3)
+#define PUMP_5 (1<<4)
+#define PUMP_6 (1<<5)
+
 /* Timers */
 #define SCALE_READ_MS 200
 #define BUTTONS_READ_MS 20
@@ -20,7 +33,8 @@
 #define LCD_UPDATE_MS 100
 #define SCALE_EMPTY_ERROR_MS 3000
 #define PUMP_EMPTY_ERROR_MS 3000
-#define POURING_TIMEOUT_MS 5000
+#define POURING_TIMEOUT_MS 10000
+#define READ_SCALE_MS 120
 
 /* Configuration */
 unsigned int buttonsReadingCounter = 0;
@@ -31,6 +45,7 @@ unsigned int lcdUpdateCounter = 0;
 unsigned int scaleEmptyErrorCounter = 0;
 unsigned int pumpEmptyErrorCounter = 0;
 unsigned int pouringTimeoutCounter = 0;
+unsigned int readScaleCounter = 0;
 
 /* Menu arrays */
 
@@ -47,14 +62,25 @@ bool lcdUpdateFlag = true;
 
 /* Global Variables */
 unsigned int potValue = 0;
-unsigned int scaleValue = 0;
+int scaleValue = 0;
+unsigned int previousScaleValue = 0;
 bool lockSelectModeButton = false;
+unsigned int activePumps = 0;
 
 /* Function prototypes */
 buttons readButtons();
+void setPump(int data);
+void resetPumps();
 
 void setup() {
   pinMode(BUTTONS_PIN, INPUT);
+
+  pinMode(12, OUTPUT); 
+  digitalWrite(12, LOW);
+
+  pinMode(SHIFT_REGISTER_DATA_PIN, OUTPUT);
+  pinMode(SHIFT_REGISTER_LATCH_PIN, OUTPUT);
+  pinMode(SHIFT_REGISTER_CLOCK_PIN, OUTPUT);
 
   /* Initialize timer1 to count 10ms and use callback to function */
   Timer1.initialize(OS_TASK_PERIOD_MS * 1000);
@@ -100,8 +126,23 @@ void loop() {
         lcd->printSecondLine("Setup Cocktail  ");
         break;
       case POURING:
-        lcd->printFirstLine("Cocktail Maker  ");
-        lcd->printSecondLine("Pouring         ");
+        lcd->printFirstLine("Pouring         ");
+        if(scaleValue < 10)
+        {
+          lcd->printAtCursor(0, 1, scaleValue);
+          lcd->printAtCursor(1, 1, "  ");
+        }
+        else if(scaleValue < 100)
+        {
+          lcd->printAtCursor(0, 1, scaleValue);
+          lcd->printAtCursor(2, 1, " ");
+        }
+        else{
+          lcd->printAtCursor(0, 1, scaleValue);
+        }
+        
+        lcd->printAtCursor(3, 1, "/");
+        lcd->printAtCursor(4, 1, potValue);
         break;
       case SCALE_IS_EMPTY:  
         lcd->printFirstLine("Scale is empty! ");
@@ -126,12 +167,30 @@ void OS_10mstask() {
   switch(currentGlobalState)
   {
     case INIT:
+      resetPumps();
       lcdUpdateFlag = true;
       currentGlobalState = AUTO;
       break;
       
     case AUTO:
-      
+      // readScaleCounter++;
+      // if(readScaleCounter % (READ_SCALE_MS * 10/ OS_TASK_PERIOD_MS) == 0)
+      // {
+      //   scaleValue = scale->read();
+      //   if(scaleValue > 5000){
+      //     scale->tare();
+      //   }
+      //   readScaleCounter = 0;
+      // }
+
+      potReadingCounter++;
+      if (potReadingCounter >= POT_READ_MS / OS_TASK_PERIOD_MS) {
+        /* What to do in loop */
+        potValue = map(analogRead(POT_SELECT_PIN), 0, 1023, 4, 39) * 25;
+
+        potReadingCounter = 0;
+      }
+
       buttonsReadingCounter++;
       if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
         /* What to do in loop */
@@ -141,14 +200,19 @@ void OS_10mstask() {
           case BUTTON_OK:
             
             scaleValue = scale->read();
+            Serial.println(scaleValue);
             if(scaleValue < 10){
               currentGlobalState = SCALE_IS_EMPTY;
             }
             else{
+              scale->tare();
+              scaleValue = 0;
               currentGlobalState = POURING;
             }
             break;
           case BUTTON_POUR:
+            scale->tare();
+            scaleValue = 0;
           
             break;
           case BUTTON_SELECT_MODE:
@@ -162,18 +226,10 @@ void OS_10mstask() {
             lockSelectModeButton = false;
             break;
         }
-
+        
         buttonsReadingCounter = 0;
       }
-
-      potReadingCounter++;
-      if (potReadingCounter >= POT_READ_MS / OS_TASK_PERIOD_MS) {
-        /* What to do in loop */
-        potValue = map(analogRead(POT_SELECT_PIN), 0, 1023, 4, 39) * 25;
-
-        potReadingCounter = 0;
-      }
-
+    
       break;
     case SELECT_MODE:
       /* Select what mode you want with the potentiometer */
@@ -200,6 +256,8 @@ void OS_10mstask() {
               lockSelectModeButton = true;
             }
             break;
+          case BUTTON_POUR:
+            break;
           case NO_BUTTON:
             lockSelectModeButton = false;
             break;
@@ -216,10 +274,8 @@ void OS_10mstask() {
         
         switch(button) {
           case BUTTON_OK:
-          
             break;
           case BUTTON_POUR:
-          
             break;
           case BUTTON_SELECT_MODE:
             previousGlobalState = currentGlobalState;
@@ -321,13 +377,35 @@ void OS_10mstask() {
       }
       break;
     case POURING:
-      pouringTimeoutCounter++;
-      if (pouringTimeoutCounter >= POURING_TIMEOUT_MS / OS_TASK_PERIOD_MS) {
-        pouringTimeoutCounter = 0;
-        currentGlobalState = PUMP_IS_EMPTY;
+      readScaleCounter++;
+      // if (pouringTimeoutCounter >= POURING_TIMEOUT_MS / READ_SCALE_MS) {
+      //     pouringTimeoutCounter = 0;
+      //     currentGlobalState = PUMP_IS_EMPTY;
+      // }
+
+      if(readScaleCounter % (READ_SCALE_MS / OS_TASK_PERIOD_MS) == 0)
+      {
+        scaleValue = scale->read();
+        if(previousScaleValue == scaleValue)
+        {
+          pouringTimeoutCounter++;
+        }
+        previousScaleValue = scaleValue;
+
+        Serial.println(scaleValue);
+        Serial.println(potValue);
+
+        if(scaleValue < int(potValue)){
+          if((activePumps & (PUMP_1)) == 0)
+            setPump(PUMP_1);
+        }
+        else
+        {
+          resetPumps();
+          currentGlobalState = AUTO;
+        }
       }
-      //When pouring algo is over
-      //currentGlobalState = AUTO;
+      
       break;
     case SCALE_IS_EMPTY:
       scaleEmptyErrorCounter++;
@@ -372,3 +450,18 @@ buttons readButtons() {
     return NO_BUTTON;
   }
 }
+
+void setPump(int data) {
+  digitalWrite(SHIFT_REGISTER_LATCH_PIN, LOW);
+  shiftOut(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, MSBFIRST, ~data);
+  activePumps = data;
+  digitalWrite(SHIFT_REGISTER_LATCH_PIN, HIGH);
+}
+
+void resetPumps() {
+  digitalWrite(SHIFT_REGISTER_LATCH_PIN, LOW);
+  shiftOut(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, MSBFIRST, 0xFF);
+  activePumps = 0;
+  digitalWrite(SHIFT_REGISTER_LATCH_PIN, HIGH);
+}
+

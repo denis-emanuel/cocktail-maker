@@ -27,6 +27,10 @@ class ScaleController {
             }
         }
 
+        void tare() {
+            this->scale.tare();
+        }
+
         void incrementReadingCounter() {
             this->readingCounter++;
             Serial.println("Reading counter incremented");

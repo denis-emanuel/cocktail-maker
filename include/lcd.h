@@ -20,6 +20,14 @@ class LCDController {
             this->lcd.home();
         }
 
+        void addWhiteSpacesAfterString(char* text) {
+            unsigned int textLength = strlen(text);
+            for(unsigned int i = textLength; i < 16; i++) {
+                text[i] = ' ';
+            }
+            text[16] = '\0';
+        }
+
         void printFirstLine(const char* text) {
             this->lcd.setCursor(0, 0);
             this->lcd.print(text);
@@ -30,7 +38,7 @@ class LCDController {
             this->lcd.print(text);
         }
         
-        void printAtCursor(unsigned int cursorX, unsigned int cursorY, char* text) {
+        void printAtCursor(unsigned int cursorX, unsigned int cursorY, const char* text) {
             this->lcd.setCursor(cursorX, cursorY);
             this->lcd.print(text);
         }
