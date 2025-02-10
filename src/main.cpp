@@ -173,15 +173,15 @@ void OS_10mstask() {
       break;
       
     case AUTO:
-      // readScaleCounter++;
-      // if(readScaleCounter % (READ_SCALE_MS * 10/ OS_TASK_PERIOD_MS) == 0)
-      // {
-      //   scaleValue = scale->read();
-      //   if(scaleValue > 5000){
-      //     scale->tare();
-      //   }
-      //   readScaleCounter = 0;
-      // }
+      readScaleCounter++;
+      if(readScaleCounter % (READ_SCALE_MS * 10/ OS_TASK_PERIOD_MS) == 0)
+      {
+        scaleValue = scale->read();
+        if(scaleValue < 0){
+          scale->tare();
+        }
+        readScaleCounter = 0;
+      }
 
       potReadingCounter++;
       if (potReadingCounter >= POT_READ_MS / OS_TASK_PERIOD_MS) {
@@ -397,7 +397,10 @@ void OS_10mstask() {
 
         if(scaleValue < int(potValue)){
           if((activePumps & (PUMP_1)) == 0)
+          {
             setPump(PUMP_1);
+            Serial.println("Pump 1 ON");
+          }
         }
         else
         {
@@ -453,14 +456,14 @@ buttons readButtons() {
 
 void setPump(int data) {
   digitalWrite(SHIFT_REGISTER_LATCH_PIN, LOW);
-  shiftOut(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, MSBFIRST, ~data);
+  shiftOut(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, MSBFIRST, data);
   activePumps = data;
   digitalWrite(SHIFT_REGISTER_LATCH_PIN, HIGH);
 }
 
 void resetPumps() {
   digitalWrite(SHIFT_REGISTER_LATCH_PIN, LOW);
-  shiftOut(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, MSBFIRST, 0xFF);
+  shiftOut(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, MSBFIRST, 0x00);
   activePumps = 0;
   digitalWrite(SHIFT_REGISTER_LATCH_PIN, HIGH);
 }
