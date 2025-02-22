@@ -53,12 +53,16 @@ unsigned int readScaleCounter = 0;
 globalState currentGlobalState = INIT;
 globalState previousGlobalState = INIT;
 
-CocktailMaker cocktailMaker;
+CocktailMaker* cocktailMaker;
 LCDController* lcd;
 ScaleController* scale; 
 
 /* Flags */
 bool lcdUpdateFlag = true;
+
+#ifdef DEBUG
+bool debug_print_flag = false;
+#endif
 
 /* Global Variables */
 unsigned int potValue = 0;
@@ -93,6 +97,14 @@ void setup() {
 
   scale = new ScaleController();
   scale->begin();
+
+  cocktailMaker = new CocktailMaker(*scale, *lcd);
+  #ifdef DEBUG
+  cocktailMaker->setRecipe(RecipeName::MEGA_COCKTAIL);
+  cocktailMaker->assignPumpsForRecipe();
+  cocktailMaker->setRecipe(RecipeName::HUGO);
+  cocktailMaker->assignPumpsForRecipe();
+  #endif
 }
 
 void loop() {
@@ -159,6 +171,22 @@ void loop() {
     }
     lcdUpdateFlag = false;
   }
+
+#ifdef DEBUG
+  if(debug_print_flag == true) {
+    for(int j = 0; j < cocktailMaker->getActiveRecipe()->getNumberOfIngredients(); j++)
+    { 
+      Serial.println(cocktailMaker->getActiveRecipe()->getIngredientByIdx(j)->getName());
+      // Serial.println("quantity: ");
+      // Serial.println(cocktailMaker->getActiveRecipe()->getIngredientByIdx(j)->getAmount() * potValue / 100);
+      Serial.println("pump: ");
+      Serial.println(cocktailMaker->getActiveRecipe()->getIngredientByIdx(j)->getPumpIndex());
+      Serial.println("-------------------");
+    }
+
+    debug_print_flag = false;
+  }
+#endif
     
 }
 
@@ -198,7 +226,6 @@ void OS_10mstask() {
         
         switch(button) {
           case BUTTON_OK:
-            
             scaleValue = scale->read();
             Serial.println(scaleValue);
             if(scaleValue < 10){
@@ -210,11 +237,12 @@ void OS_10mstask() {
               currentGlobalState = POURING;
             }
             break;
+
           case BUTTON_POUR:
             scale->tare();
             scaleValue = 0;
-          
             break;
+
           case BUTTON_SELECT_MODE:
             previousGlobalState = currentGlobalState;
             if (lockSelectModeButton == false) {
@@ -222,6 +250,7 @@ void OS_10mstask() {
               lockSelectModeButton = true;
             }
             break;
+
           case NO_BUTTON:
             lockSelectModeButton = false;
             break;
@@ -392,14 +421,16 @@ void OS_10mstask() {
         }
         previousScaleValue = scaleValue;
 
-        Serial.println(scaleValue);
-        Serial.println(potValue);
+        #ifdef DEBUG
+        debug_print_flag = true;
+        currentGlobalState = PAUSED;
+        #endif
 
+        #ifndef DEBUG
         if(scaleValue < int(potValue)){
           if((activePumps & (PUMP_1)) == 0)
           {
             setPump(PUMP_1);
-            Serial.println("Pump 1 ON");
           }
         }
         else
@@ -407,6 +438,7 @@ void OS_10mstask() {
           resetPumps();
           currentGlobalState = AUTO;
         }
+        #endif
       }
       
       break;

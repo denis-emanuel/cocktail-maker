@@ -3,53 +3,94 @@
 
 #include "../include/constants.h"
 #include "../include/typedefs.h"
+#include "../include/scale.h"
+#include "../include/lcd.h"
 
 class Ingredient {
     IngredientName name;
-    int amount_ml;
+    int amount_percentage;
     short int pumpIndex; // -1 if not assigned/used
 
-public:
-    Ingredient() {
-        this->name = IngredientName::NO_NAME;
-        this->amount_ml = 0;
-        this->pumpIndex = -1;
-    }
+    public:
+        Ingredient() {
+            this->name = IngredientName::NO_NAME;
+            this->amount_percentage = 0;
+            this->pumpIndex = -1;
+        }
 
-    Ingredient(IngredientName name, int amount_ml) {
-        this->name = name;
-        this->amount_ml = amount_ml;
-        this->pumpIndex = -1;
-    }
+        Ingredient(IngredientName name, int amount_ml) {
+            this->name = name;
+            this->amount_percentage = amount_ml;
+            this->pumpIndex = -1;
+        }
 
-    IngredientName getName() {
-        return this->name;
-    }
+        IngredientName getName() {
+            return this->name;
+        }
 
-    int getAmount() {
-        return this->amount_ml;
-    }
+        int getAmount() {
+            return this->amount_percentage;
+        }
 
-    short int getPumpIndex() {
-        return this->pumpIndex;
-    }
+        short int getPumpIndex() {
+            return this->pumpIndex;
+        }
 
-    void setPumpIndex(short int pumpIndex) {
-        this->pumpIndex = pumpIndex;
-    }   
+        void setPumpIndex(short int pumpIndex) {
+            this->pumpIndex = pumpIndex;
+        }   
+};
+
+Ingredient* ginTonic[GIN_TONIC_INGREDIENTS] = {
+    new Ingredient(IngredientName::GIN, 40),
+    new Ingredient(IngredientName::TONIC, 50),
+    new Ingredient(IngredientName::SIMPLE_SYRUP, 5),
+    new Ingredient(IngredientName::SODA, 5)
+};
+
+Ingredient* hugo[HUGO_INGREDIENTS] = {
+    new Ingredient(IngredientName::ELDERFLOWER_SYRUP, 10),
+    new Ingredient(IngredientName::PROSECCO, 60),
+    new Ingredient(IngredientName::SPRITE, 30)
+};
+
+Ingredient* hugoTest[HUGO_TEST_INGREDIENTS] = {
+    new Ingredient(IngredientName::SIMPLE_SYRUP, 10),
+    new Ingredient(IngredientName::SPRITE, 25),
+    new Ingredient(IngredientName::SODA, 5),
+    new Ingredient(IngredientName::PROSECCO, 60)
+};
+
+Ingredient* megaCocktail[MEGA_COCKTAIL_INGREDIENTS] = {
+    new Ingredient(IngredientName::GIN, 10),
+    new Ingredient(IngredientName::TONIC, 10),
+    new Ingredient(IngredientName::SPRITE, 10),
+    new Ingredient(IngredientName::PROSECCO, 10),
+    new Ingredient(IngredientName::ELDERFLOWER_SYRUP, 10),
+    new Ingredient(IngredientName::SODA, 50)
+};
+
+Ingredient* test[TEST_INGREDIENTS] = {
+    new Ingredient(IngredientName::GIN, 10),
+    new Ingredient(IngredientName::TONIC, 10),
+    new Ingredient(IngredientName::SPRITE, 10),
+    new Ingredient(IngredientName::PROSECCO, 10),
+    new Ingredient(IngredientName::ELDERFLOWER_SYRUP, 10),
+    new Ingredient(IngredientName::SODA, 50)
 };
 
 class Recipe {
     private:
         String name;
         short int noOfIngredients;
-        Ingredient* ingredients;
+        Ingredient* ingredients[6];
 
     public:
-        Recipe(const char name [], short int noOfIngredients, Ingredient ingredients[6]) {
+        Recipe() {}
+
+        Recipe(const char name [], short int noOfIngredients, Ingredient* ingredients[]) {
             this->name = name;
             this->noOfIngredients = noOfIngredients;
-            this->ingredients = new Ingredient[noOfIngredients];
             for (int i = 0; i < noOfIngredients; i++) {
                 this->ingredients[i] = ingredients[i];
             }
@@ -59,131 +100,135 @@ class Recipe {
             delete[] this->ingredients;
         }
 
-        IngredientName getIngredientNameByIdx(int index) {
-            return this->ingredients[index].getName();
-        }
-
-        void setPumpIndex(int ingredientIdx, short int pumpIndex) {
-            this->ingredients[ingredientIdx].setPumpIndex(pumpIndex);
-        }
-
-        Ingredient* getIngredients() {
-            return this->ingredients;
-        }
-
-        Ingredient getIngredientByIdx(int index) {
+        Ingredient* getIngredientByIdx(int index) {
             return this->ingredients[index];
         }
 
-        void resetPumpIndexes() {
-            for (int i = 0; i < NUM_OF_PUMPS; i++) {
-                this->ingredients[i].setPumpIndex(-1);
-            }
-        }
-
-        short int getNoOfIngredients() {
+        short int getNumberOfIngredients() {
             return this->noOfIngredients;
         }
+};
+
+enum RecipeName {
+    GIN_TONIC,
+    HUGO,
+    HUGO_TEST,
+    MEGA_COCKTAIL,
+    TEST,
+    NO_OF_RECIPES
+};
+
+Recipe* recipes[NO_OF_RECIPES] = {
+    new Recipe("Gin Tonic", GIN_TONIC_INGREDIENTS, ginTonic),
+    new Recipe("Hugo", HUGO_INGREDIENTS, hugo),
+    new Recipe("Hugo Test", HUGO_TEST_INGREDIENTS, hugoTest),
+    new Recipe("Mega Cocktail", MEGA_COCKTAIL_INGREDIENTS, megaCocktail),
+    new Recipe("Test", TEST_INGREDIENTS, test)
 };
 
 class CocktailMaker {
     private:
         Recipe* activeRecipe;
         IngredientName pumpAssignment[NUM_OF_PUMPS];
+        ScaleController scale;
+        LCDController lcd;
 
-        void assignPumpsForRecipe(Recipe& recipe) {
-            IngredientName newPumpAssignment[NUM_OF_PUMPS];
-            for (int i = 0; i < NUM_OF_PUMPS; i++) {
-                newPumpAssignment[i] = IngredientName::NO_NAME;
-            }
-
-            // reuse existing pump assignments
-            // loop through ingredients:
-            for (int i = 0; i < recipe.getNoOfIngredients(); i++) {
-                bool isAlreadyAssigned = false;
-
-                if (recipe.getIngredientNameByIdx(i) != IngredientName::NO_NAME) {
-                    // check if ingredient is already assigned to a pump
-                    // loop through pump assignments
-                    for (int j = 0; j < NUM_OF_PUMPS; j++) {
-                        if (this->pumpAssignment[j] == recipe.getIngredientNameByIdx(i)) {
-                            newPumpAssignment[i] = recipe.getIngredientNameByIdx(i);
-                            isAlreadyAssigned = true;
-                        }
-                    }
-
-                    if (!isAlreadyAssigned) {
-                        // loop through pump assignments
-                        for (int j = 0; j < NUM_OF_PUMPS; j++) {
-                            if (this->pumpAssignment[j] == IngredientName::NO_NAME) {
-                                newPumpAssignment[j] = recipe.getIngredientNameByIdx(i);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            for (int i = 0; i < NUM_OF_PUMPS; i++) {
-                this->pumpAssignment[i] = newPumpAssignment[i];
-            }
-        }
-
-        void setPumpIndexesForRecipe(Recipe& recipe) {
-            // loop through ingredients
-            for (int i = 0; i < NUM_OF_PUMPS; i++) {
-                if (recipe.getIngredientNameByIdx(i) != IngredientName::NO_NAME) {
-                    // loop through pump assignments
-                    for (int j = 0; j < NUM_OF_PUMPS; j++) {
-                        if (this->pumpAssignment[j] == recipe.getIngredientNameByIdx(i)) {
-                            recipe.setPumpIndex(i, j);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+        // void setPumpIndexesForRecipe(Recipe& recipe) {
+        //     // loop through ingredients
+        //     for (int i = 0; i < NUM_OF_PUMPS; i++) {
+        //         if (recipe.getIngredientByIdx(i)->getName() != IngredientName::NO_NAME) {
+        //             // loop through pump assignments
+        //             for (int j = 0; j < NUM_OF_PUMPS; j++) {
+        //                 if (this->pumpAssignment[j] == recipe.getIngredientByIdx(i)->getName()) {
+        //                     recipe.setPumpIndex(i, j);
+        //                     break;
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
     public:
-        CocktailMaker() {
+        CocktailMaker() {}
+
+        CocktailMaker(
+            ScaleController scale,
+            LCDController lcd
+        ) {
+            this->scale = scale;
+            this->lcd = lcd;
             for (int i = 0; i < NUM_OF_PUMPS; i++) {
                 this->pumpAssignment[i] = IngredientName::NO_NAME;
             }
         }
 
-        void setRecipe(Recipe& recipe) {
-            this->activeRecipe = &recipe;
-            this->activeRecipe->resetPumpIndexes();
-            assignPumpsForRecipe(recipe);
+        void assignPumpsForRecipe() {
+            IngredientName newPumpAssignment[NUM_OF_PUMPS];
+            for (int i = 0; i < NUM_OF_PUMPS; i++) {
+                newPumpAssignment[i] = IngredientName::NO_NAME;
+            }
+
+            bool isAlreadyAssignedToPump[this->activeRecipe->getNumberOfIngredients()] = {false};
+
+            // reuse existing pump assignments
+            // loop through ingredients:
+            for (int ingredientIdx = 0; ingredientIdx < this->activeRecipe->getNumberOfIngredients(); ingredientIdx++) {
+                if (this->activeRecipe->getIngredientByIdx(ingredientIdx)->getName() != IngredientName::NO_NAME) {
+                    // check if ingredient is already assigned to a pump
+                    // loop through pump assignments
+                    for (int pumpIdx = 0; pumpIdx < NUM_OF_PUMPS; pumpIdx++) {
+                        if (this->pumpAssignment[pumpIdx] == this->activeRecipe->getIngredientByIdx(ingredientIdx)->getName()) {
+                            newPumpAssignment[pumpIdx] = this->activeRecipe->getIngredientByIdx(ingredientIdx)->getName();
+                            this->activeRecipe->getIngredientByIdx(ingredientIdx)->setPumpIndex(pumpIdx);
+                            isAlreadyAssignedToPump[ingredientIdx] = true;
+                        }
+                    }
+                }
+            }
+
+            for (int ingredientIdx = 0; ingredientIdx < this->activeRecipe->getNumberOfIngredients(); ingredientIdx++) {
+                if (!isAlreadyAssignedToPump[ingredientIdx] && this->activeRecipe->getIngredientByIdx(ingredientIdx)->getName() != IngredientName::NO_NAME) {
+                    // loop through pump assignments
+                    for (int pumpIdx = 0; pumpIdx < NUM_OF_PUMPS; pumpIdx++) {
+                        if (newPumpAssignment[pumpIdx] == IngredientName::NO_NAME) {
+                            newPumpAssignment[pumpIdx] = this->activeRecipe->getIngredientByIdx(ingredientIdx)->getName();
+                            this->activeRecipe->getIngredientByIdx(ingredientIdx)->setPumpIndex(pumpIdx);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            for (int pumpIdx = 0; pumpIdx < NUM_OF_PUMPS; pumpIdx++) {
+                this->pumpAssignment[pumpIdx] = newPumpAssignment[pumpIdx];
+            }
+        }
+
+        Recipe* getActiveRecipe() {
+            return this->activeRecipe;
+        }
+
+        void setRecipe(RecipeName recipeName) {
+            if(this->activeRecipe != nullptr) {
+                delete this->activeRecipe;
+            }
+            this->activeRecipe = recipes[recipeName];
+
+            for (int i = 0; i < NUM_OF_PUMPS; i++) {
+                this->activeRecipe->getIngredientByIdx(i)->setPumpIndex(-1);
+            }
         }
 
         IngredientName* getPumpAssignment() {
             return this->pumpAssignment;
         }
 
-        void mixCocktail() {
-            setPumpIndexesForRecipe(*this->activeRecipe);
-
-            Ingredient* ingredients = this->activeRecipe->getIngredients();
-
-            for (int i = 0; i < this->activeRecipe->getNoOfIngredients(); i++) {
-                if (this->activeRecipe->getIngredientByIdx(i).getPumpIndex() != -1) {
-                    // start pump and fill ingredient.amount_ml
-                    // wait for pump to finish
-                    // stop pump
-                }
+        void setPumpAssignment(IngredientName pumpAssignment[NUM_OF_PUMPS]) {
+            for (int i = 0; i < NUM_OF_PUMPS; i++) {
+                this->pumpAssignment[i] = pumpAssignment[i];
             }
         }
 };
 
-/* Ingredients and recipes */
-Ingredient ginTonicIngredients[2] = {
-  Ingredient(IngredientName::GIN, 50),
-  Ingredient(IngredientName::TONIC, 150)
-};
-
-Recipe recipes[1] = {
-  Recipe("Gin Tonic", 2, ginTonicIngredients)
-};
 
 #endif

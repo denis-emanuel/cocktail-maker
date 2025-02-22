@@ -1,6 +1,8 @@
 #ifndef PROJECT_CONSTANTS_H
 #define PROJECT_CONSTANTS_H
 
+#define DEBUG
+
 #define OS_TASK_PERIOD_MS 10
 
 #define NUM_OF_PUMPS 6
@@ -13,6 +15,12 @@
 #define JUICE_END 79
 #define SODA_START 80
 #define SODA_END 99
+
+#define GIN_TONIC_INGREDIENTS 4
+#define HUGO_INGREDIENTS 3
+#define HUGO_TEST_INGREDIENTS 4
+#define MEGA_COCKTAIL_INGREDIENTS 6
+#define TEST_INGREDIENTS 6
 
 /* Weight sensor */
 #define LOADCELL_DOUT_PIN 2

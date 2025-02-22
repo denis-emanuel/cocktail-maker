@@ -33,21 +33,29 @@ const char* functionModes[NO_OF_STATES] = {
     "CLEAN           "
 };
 
-enum class IngredientName {
+enum IngredientName {
     NO_NAME,
+    
     GIN,
     RUM,
     TEQUILA,
     WHISKEY,
     VERMOUTH,
+    PROSECCO,
+
     LIME_JUICE,
     LEMON_JUICE,
     ORANGE_JUICE,
     CRANBERRY_JUICE,
+
     SODA,
+    SPRITE,
     TONIC,
     GINGER_ALE,
-    COKE
+    COKE,
+
+    ELDERFLOWER_SYRUP,
+    SIMPLE_SYRUP,
 };
 
 enum class Category {
