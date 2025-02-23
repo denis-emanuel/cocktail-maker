@@ -41,42 +41,44 @@ class Ingredient {
         }   
 };
 
-Ingredient* ginTonic[GIN_TONIC_INGREDIENTS] = {
+Ingredient** ginTonic = new Ingredient*[GIN_TONIC_INGREDIENTS] {
     new Ingredient(IngredientName::GIN, 40),
     new Ingredient(IngredientName::TONIC, 50),
     new Ingredient(IngredientName::SIMPLE_SYRUP, 5),
-    new Ingredient(IngredientName::SODA, 5)
+    new Ingredient(IngredientName::SODA, 5),
+    new Ingredient(IngredientName::GINGER_ALE, 0),
+    new Ingredient(IngredientName::LEMON_JUICE, 0)
 };
 
-Ingredient* hugo[HUGO_INGREDIENTS] = {
+Ingredient** hugo = new Ingredient*[HUGO_INGREDIENTS] {
     new Ingredient(IngredientName::ELDERFLOWER_SYRUP, 10),
     new Ingredient(IngredientName::PROSECCO, 60),
-    new Ingredient(IngredientName::SPRITE, 30)
+    new Ingredient(IngredientName::SPRITE, 30),
+    new Ingredient(IngredientName::SODA, 10),
+    new Ingredient(IngredientName::GINGER_ALE, 0),
 };
 
-Ingredient* hugoTest[HUGO_TEST_INGREDIENTS] = {
-    new Ingredient(IngredientName::SIMPLE_SYRUP, 10),
-    new Ingredient(IngredientName::SPRITE, 25),
-    new Ingredient(IngredientName::SODA, 5),
-    new Ingredient(IngredientName::PROSECCO, 60)
+Ingredient** hugoTest = new Ingredient*[HUGO_TEST_INGREDIENTS] {
+    new Ingredient(IngredientName::ELDERFLOWER_SYRUP, 10),
+    new Ingredient(IngredientName::PROSECCO, 60),
+    new Ingredient(IngredientName::SPRITE, 30),
+    new Ingredient(IngredientName::SODA, 10),
 };
 
-Ingredient* megaCocktail[MEGA_COCKTAIL_INGREDIENTS] = {
+Ingredient** megaCocktail = new Ingredient*[MEGA_COCKTAIL_INGREDIENTS] {
     new Ingredient(IngredientName::GIN, 10),
     new Ingredient(IngredientName::TONIC, 10),
     new Ingredient(IngredientName::SPRITE, 10),
     new Ingredient(IngredientName::PROSECCO, 10),
-    new Ingredient(IngredientName::ELDERFLOWER_SYRUP, 10),
     new Ingredient(IngredientName::SODA, 50)
 };
 
-Ingredient* test[TEST_INGREDIENTS] = {
+Ingredient** test = new Ingredient*[TEST_INGREDIENTS] {
     new Ingredient(IngredientName::GIN, 10),
     new Ingredient(IngredientName::TONIC, 10),
     new Ingredient(IngredientName::SPRITE, 10),
     new Ingredient(IngredientName::PROSECCO, 10),
-    new Ingredient(IngredientName::ELDERFLOWER_SYRUP, 10),
-    new Ingredient(IngredientName::SODA, 50)
+    new Ingredient(IngredientName::ELDERFLOWER_SYRUP, 10)
 };
 
 class Recipe {
