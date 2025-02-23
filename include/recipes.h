@@ -32,7 +32,7 @@ class Ingredient {
             return this->amount_percentage;
         }
 
-        short int getPumpIndex() {
+        int getPumpIndex() {
             return this->pumpIndex;
         }
 
@@ -44,41 +44,13 @@ class Ingredient {
 Ingredient** ginTonic = new Ingredient*[GIN_TONIC_INGREDIENTS] {
     new Ingredient(IngredientName::GIN, 40),
     new Ingredient(IngredientName::TONIC, 50),
-    new Ingredient(IngredientName::SIMPLE_SYRUP, 5),
-    new Ingredient(IngredientName::SODA, 5),
-    new Ingredient(IngredientName::GINGER_ALE, 0),
-    new Ingredient(IngredientName::LEMON_JUICE, 0)
+    new Ingredient(IngredientName::LEMON_JUICE, 10),
 };
 
 Ingredient** hugo = new Ingredient*[HUGO_INGREDIENTS] {
     new Ingredient(IngredientName::ELDERFLOWER_SYRUP, 10),
     new Ingredient(IngredientName::PROSECCO, 60),
     new Ingredient(IngredientName::SPRITE, 30),
-    new Ingredient(IngredientName::SODA, 10),
-    new Ingredient(IngredientName::GINGER_ALE, 0),
-};
-
-Ingredient** hugoTest = new Ingredient*[HUGO_TEST_INGREDIENTS] {
-    new Ingredient(IngredientName::ELDERFLOWER_SYRUP, 10),
-    new Ingredient(IngredientName::PROSECCO, 60),
-    new Ingredient(IngredientName::SPRITE, 30),
-    new Ingredient(IngredientName::SODA, 10),
-};
-
-Ingredient** megaCocktail = new Ingredient*[MEGA_COCKTAIL_INGREDIENTS] {
-    new Ingredient(IngredientName::GIN, 10),
-    new Ingredient(IngredientName::TONIC, 10),
-    new Ingredient(IngredientName::SPRITE, 10),
-    new Ingredient(IngredientName::PROSECCO, 10),
-    new Ingredient(IngredientName::SODA, 50)
-};
-
-Ingredient** test = new Ingredient*[TEST_INGREDIENTS] {
-    new Ingredient(IngredientName::GIN, 10),
-    new Ingredient(IngredientName::TONIC, 10),
-    new Ingredient(IngredientName::SPRITE, 10),
-    new Ingredient(IngredientName::PROSECCO, 10),
-    new Ingredient(IngredientName::ELDERFLOWER_SYRUP, 10)
 };
 
 class Recipe {
@@ -114,18 +86,12 @@ class Recipe {
 enum RecipeName {
     GIN_TONIC,
     HUGO,
-    HUGO_TEST,
-    MEGA_COCKTAIL,
-    TEST,
     NO_OF_RECIPES
 };
 
 Recipe* recipes[NO_OF_RECIPES] = {
     new Recipe("Gin Tonic", GIN_TONIC_INGREDIENTS, ginTonic),
     new Recipe("Hugo", HUGO_INGREDIENTS, hugo),
-    new Recipe("Hugo Test", HUGO_TEST_INGREDIENTS, hugoTest),
-    new Recipe("Mega Cocktail", MEGA_COCKTAIL_INGREDIENTS, megaCocktail),
-    new Recipe("Test", TEST_INGREDIENTS, test)
 };
 
 class CocktailMaker {
@@ -134,21 +100,6 @@ class CocktailMaker {
         IngredientName pumpAssignment[NUM_OF_PUMPS];
         ScaleController scale;
         LCDController lcd;
-
-        // void setPumpIndexesForRecipe(Recipe& recipe) {
-        //     // loop through ingredients
-        //     for (int i = 0; i < NUM_OF_PUMPS; i++) {
-        //         if (recipe.getIngredientByIdx(i)->getName() != IngredientName::NO_NAME) {
-        //             // loop through pump assignments
-        //             for (int j = 0; j < NUM_OF_PUMPS; j++) {
-        //                 if (this->pumpAssignment[j] == recipe.getIngredientByIdx(i)->getName()) {
-        //                     recipe.setPumpIndex(i, j);
-        //                     break;
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
 
     public:
         CocktailMaker() {}
@@ -219,6 +170,8 @@ class CocktailMaker {
             for (int i = 0; i < NUM_OF_PUMPS; i++) {
                 this->activeRecipe->getIngredientByIdx(i)->setPumpIndex(-1);
             }
+
+            this->assignPumpsForRecipe();
         }
 
         IngredientName* getPumpAssignment() {

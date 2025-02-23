@@ -26,15 +26,15 @@
 #define PUMP_5 (1<<4)
 #define PUMP_6 (1<<5)
 
-/* Timers */
-#define SCALE_READ_MS 200
-#define BUTTONS_READ_MS 20
-#define POT_READ_MS 100
-#define LCD_UPDATE_MS 100
-#define SCALE_EMPTY_ERROR_MS 3000
-#define PUMP_EMPTY_ERROR_MS 3000
-#define POURING_TIMEOUT_MS 10000
-#define READ_SCALE_MS 120
+/* Timers */ // Divide by OStaskMS (12 = 120ms)
+#define SCALE_READ_MS 20
+#define BUTTONS_READ_MS 2
+#define POT_READ_MS 10
+#define LCD_UPDATE_MS 10
+#define SCALE_EMPTY_ERROR_MS 300
+#define PUMP_EMPTY_ERROR_MS 1000
+#define POURING_TIMEOUT_COUNTS 7 //Seconds Aprox
+#define READ_SCALE_MS 12 
 
 /* Configuration */
 unsigned int buttonsReadingCounter = 0;
@@ -71,10 +71,14 @@ unsigned int previousScaleValue = 0;
 bool lockSelectModeButton = false;
 unsigned int activePumps = 0;
 
+/* AutoPouring state variables */
+unsigned int currentPouringIngredientIdx = 0;
+int currentPouringQtyTgt = 0;
+
 /* Function prototypes */
 buttons readButtons();
 void setPump(int data);
-void resetPumps();
+void stopPumps();
 
 void setup() {
   pinMode(BUTTONS_PIN, INPUT);
@@ -100,10 +104,11 @@ void setup() {
 
   cocktailMaker = new CocktailMaker(*scale, *lcd);
   #ifdef DEBUG
-  cocktailMaker->setRecipe(RecipeName::MEGA_COCKTAIL);
-  cocktailMaker->assignPumpsForRecipe();
   cocktailMaker->setRecipe(RecipeName::HUGO);
-  cocktailMaker->assignPumpsForRecipe();
+  #endif
+
+  #ifndef DEBUG
+  cocktailMaker->setRecipe(RecipeName::HUGO);
   #endif
 }
 
@@ -127,7 +132,7 @@ void loop() {
         break;
       case MANUAL:
         lcd->printFirstLine("Cocktail Maker  ");
-        lcd->printSecondLine("Manual          ");
+        lcd->printSecondLine("Manual         ");
         break;
       case SETUP:
         lcd->printFirstLine("Cocktail Maker  ");
@@ -162,11 +167,12 @@ void loop() {
         break;
       case PUMP_IS_EMPTY:  
         lcd->printFirstLine("Pump is empty!  ");
-        lcd->printSecondLine("                ");
+        lcd->printSecondLine("Refill pump     ");
+        lcd->printAtCursor(13, 1, int(cocktailMaker->getActiveRecipe()->getIngredientByIdx(currentPouringIngredientIdx)->getPumpIndex()));
         break;
       case CLEAN:
         lcd->printFirstLine("Cocktail Maker  ");
-        lcd->printSecondLine("Cleaning       ");
+        lcd->printSecondLine("Cleaning        ");
         break;
     }
     lcdUpdateFlag = false;
@@ -174,16 +180,6 @@ void loop() {
 
 #ifdef DEBUG
   if(debug_print_flag == true) {
-    for(int j = 0; j < cocktailMaker->getActiveRecipe()->getNumberOfIngredients(); j++)
-    { 
-      Serial.println(cocktailMaker->getActiveRecipe()->getIngredientByIdx(j)->getName());
-      // Serial.println("quantity: ");
-      // Serial.println(cocktailMaker->getActiveRecipe()->getIngredientByIdx(j)->getAmount() * potValue / 100);
-      Serial.println("pump: ");
-      Serial.println(cocktailMaker->getActiveRecipe()->getIngredientByIdx(j)->getPumpIndex());
-      Serial.println("-------------------");
-    }
-
     debug_print_flag = false;
   }
 #endif
@@ -195,14 +191,14 @@ void OS_10mstask() {
   switch(currentGlobalState)
   {
     case INIT:
-      resetPumps();
+      stopPumps();
       lcdUpdateFlag = true;
       currentGlobalState = AUTO;
       break;
       
     case AUTO:
       readScaleCounter++;
-      if(readScaleCounter % (READ_SCALE_MS * 10/ OS_TASK_PERIOD_MS) == 0)
+      if(readScaleCounter % (READ_SCALE_MS * 10) == 0)
       {
         scaleValue = scale->read();
         if(scaleValue < 0){
@@ -212,7 +208,7 @@ void OS_10mstask() {
       }
 
       potReadingCounter++;
-      if (potReadingCounter >= POT_READ_MS / OS_TASK_PERIOD_MS) {
+      if (potReadingCounter >= POT_READ_MS) {
         /* What to do in loop */
         potValue = map(analogRead(POT_SELECT_PIN), 0, 1023, 4, 39) * 25;
 
@@ -220,7 +216,7 @@ void OS_10mstask() {
       }
 
       buttonsReadingCounter++;
-      if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
+      if (buttonsReadingCounter >= BUTTONS_READ_MS) {
         /* What to do in loop */
         buttons button = readButtons();
         
@@ -234,6 +230,9 @@ void OS_10mstask() {
             else{
               scale->tare();
               scaleValue = 0;
+
+              currentPouringIngredientIdx = 0;
+              currentPouringQtyTgt = cocktailMaker->getActiveRecipe()->getIngredientByIdx(currentPouringIngredientIdx)->getAmount() * potValue / 100;
               currentGlobalState = POURING;
             }
             break;
@@ -263,7 +262,7 @@ void OS_10mstask() {
     case SELECT_MODE:
       /* Select what mode you want with the potentiometer */
       potReadingCounter++;
-      if (potReadingCounter >= POT_READ_MS / OS_TASK_PERIOD_MS) {
+      if (potReadingCounter >= POT_READ_MS) {
         /* What to do in loop */
         potValue = map(analogRead(POT_SELECT_PIN), 0, 1023, 0, NO_OF_STATES - 1);
 
@@ -271,7 +270,7 @@ void OS_10mstask() {
       }
 
       buttonsReadingCounter++;
-      if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
+      if (buttonsReadingCounter >= BUTTONS_READ_MS) {
         /* What to do in loop */
         buttons button = readButtons();
         
@@ -297,7 +296,7 @@ void OS_10mstask() {
       break;
     case MANUAL:
       buttonsReadingCounter++;
-      if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
+      if (buttonsReadingCounter >= BUTTONS_READ_MS) {
         /* What to do in loop */
         buttons button = readButtons();
         
@@ -323,7 +322,7 @@ void OS_10mstask() {
       break;
     case SETUP:
       buttonsReadingCounter++;
-      if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
+      if (buttonsReadingCounter >= BUTTONS_READ_MS) {
         /* What to do in loop */
         buttons button = readButtons();
         
@@ -351,7 +350,7 @@ void OS_10mstask() {
       break;
     case SETUP_COCKTAIL:
       buttonsReadingCounter++;
-      if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
+      if (buttonsReadingCounter >= BUTTONS_READ_MS) {
         /* What to do in loop */
         buttons button = readButtons();
         
@@ -379,7 +378,7 @@ void OS_10mstask() {
       break;
     case CLEAN:
       buttonsReadingCounter++;
-      if (buttonsReadingCounter >= BUTTONS_READ_MS / OS_TASK_PERIOD_MS) {
+      if (buttonsReadingCounter >= BUTTONS_READ_MS) {
         /* What to do in loop */
         buttons button = readButtons();
         
@@ -407,17 +406,22 @@ void OS_10mstask() {
       break;
     case POURING:
       readScaleCounter++;
-      // if (pouringTimeoutCounter >= POURING_TIMEOUT_MS / READ_SCALE_MS) {
-      //     pouringTimeoutCounter = 0;
-      //     currentGlobalState = PUMP_IS_EMPTY;
-      // }
+      if (pouringTimeoutCounter >= POURING_TIMEOUT_COUNTS) {
+          Serial.println(millis());
+          pouringTimeoutCounter = 0;
+          currentGlobalState = PUMP_IS_EMPTY;
+      }
 
-      if(readScaleCounter % (READ_SCALE_MS / OS_TASK_PERIOD_MS) == 0)
+      if(readScaleCounter % (READ_SCALE_MS ) == 0)
       {
         scaleValue = scale->read();
-        if(previousScaleValue == scaleValue)
+        if(int(previousScaleValue) == scaleValue)
         {
           pouringTimeoutCounter++;
+        }
+        else
+        {
+          pouringTimeoutCounter = 0;
         }
         previousScaleValue = scaleValue;
 
@@ -427,15 +431,28 @@ void OS_10mstask() {
         #endif
 
         #ifndef DEBUG
+
         if(scaleValue < int(potValue)){
-          if((activePumps & (PUMP_1)) == 0)
+          if(scaleValue <= currentPouringQtyTgt)
           {
-            setPump(PUMP_1);
+            if((activePumps & (1 << cocktailMaker->getActiveRecipe()->getIngredientByIdx(currentPouringIngredientIdx)->getPumpIndex())) == 0)
+            {
+              Serial.println(cocktailMaker->getActiveRecipe()->getIngredientByIdx(currentPouringIngredientIdx)->getPumpIndex());
+              setPump(1 << cocktailMaker->getActiveRecipe()->getIngredientByIdx(currentPouringIngredientIdx)->getPumpIndex());
+            }
+          }
+          else
+          {
+            stopPumps();
+            currentPouringIngredientIdx++;
+            currentPouringQtyTgt = currentPouringQtyTgt + (cocktailMaker->getActiveRecipe()->getIngredientByIdx(currentPouringIngredientIdx)->getAmount() * potValue / 100);
           }
         }
         else
         {
-          resetPumps();
+          stopPumps();
+          currentPouringIngredientIdx = 0;
+          currentPouringQtyTgt = 0;
           currentGlobalState = AUTO;
         }
         #endif
@@ -444,14 +461,14 @@ void OS_10mstask() {
       break;
     case SCALE_IS_EMPTY:
       scaleEmptyErrorCounter++;
-      if (scaleEmptyErrorCounter >= SCALE_EMPTY_ERROR_MS / OS_TASK_PERIOD_MS) {
+      if (scaleEmptyErrorCounter >= SCALE_EMPTY_ERROR_MS) {
         scaleEmptyErrorCounter = 0;
         currentGlobalState = AUTO;
       }
       break;
     case PUMP_IS_EMPTY:
       pumpEmptyErrorCounter++;
-      if (pumpEmptyErrorCounter >= PUMP_EMPTY_ERROR_MS / OS_TASK_PERIOD_MS) {
+      if (pumpEmptyErrorCounter >= PUMP_EMPTY_ERROR_MS) {
         pumpEmptyErrorCounter = 0;
         currentGlobalState = AUTO;
       }
@@ -466,7 +483,7 @@ void OS_10mstask() {
 
   /* Update LCD */
   lcdUpdateCounter++;
-  if (lcdUpdateCounter >= LCD_UPDATE_MS / OS_TASK_PERIOD_MS) {
+  if (lcdUpdateCounter >= LCD_UPDATE_MS) {
     lcdUpdateFlag = true;
     lcdUpdateCounter = 0;
   }
@@ -493,7 +510,7 @@ void setPump(int data) {
   digitalWrite(SHIFT_REGISTER_LATCH_PIN, HIGH);
 }
 
-void resetPumps() {
+void stopPumps() {
   digitalWrite(SHIFT_REGISTER_LATCH_PIN, LOW);
   shiftOut(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, MSBFIRST, 0x00);
   activePumps = 0;
