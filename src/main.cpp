@@ -36,6 +36,10 @@
 #define POURING_TIMEOUT_COUNTS 7 //Seconds Aprox
 #define READ_SCALE_MS 12 
 
+/* Millis counters */
+#define MAIN_LOOP_MS 250
+unsigned long lastLoopMillis = 0;
+
 /* Configuration */
 unsigned int buttonsReadingCounter = 0;
 const unsigned int BUTTONS_THRESHOLDS[NO_BUTTON] = {100, 550, 700};
@@ -66,6 +70,7 @@ bool debug_print_flag = false;
 
 /* Global Variables */
 unsigned int potValue = 0;
+unsigned int previousPotValue = 0;
 int scaleValue = 0;
 unsigned int previousScaleValue = 0;
 bool lockSelectModeButton = false;
@@ -113,69 +118,80 @@ void setup() {
 }
 
 void loop() {
-  if(lcdUpdateFlag == true) {
-    switch (currentGlobalState)
-    {
-      case INIT:
-        lcd->printFirstLine("Cocktail Maker");
-        lcd->printSecondLine("Initializing");
+  /* Prevent display from updating earlier than MAIN_LOOP_MS */
+  if(millis() - lastLoopMillis > MAIN_LOOP_MS)
+  {
+    if(lcdUpdateFlag == true) {
+      switch (currentGlobalState)
+      {
+        case INIT:
+          lcd->printFirstLine("Cocktail Maker");
+          lcd->printSecondLine("Initializing");
+          break;
+        case AUTO:
+          lcd->printFirstLine("AUTO Mode       ");
+          lcd->printSecondLine("ml: ");
+          lcd->lcdClearAt(7, 1);
+          lcd->printAtCursor(4, 1, potValue);
+          break;
+        case SELECT_MODE:
+          lcd->printFirstLine("Select Mode :   ");
+          lcd->printSecondLine(functionModes[potValue]);
+          break;
+        case MANUAL:
+          lcd->printFirstLine("Cocktail Maker  ");
+          lcd->printSecondLine("Manual         ");
+          break;
+        case SETUP:
+          lcd->printFirstLine("Cocktail Maker  ");
+          lcd->printSecondLine("Setup           ");
+          break;
+        case SETUP_COCKTAIL:
+          lcd->printFirstLine("Cocktail Maker  ");
+          lcd->printSecondLine("Setup Cocktail  ");
+          break;
+        case POURING:
+          lcd->printFirstLine("Pouring         ");
+          if(scaleValue < 10)
+          {
+            lcd->printAtCursor(0, 1, scaleValue);
+            lcd->printAtCursor(1, 1, "  ");
+          }
+          else if(scaleValue < 100)
+          {
+            lcd->printAtCursor(0, 1, scaleValue);
+            lcd->printAtCursor(2, 1, " ");
+          }
+          else{
+            lcd->printAtCursor(0, 1, scaleValue);
+          }
+          
+          lcd->printAtCursor(3, 1, "/");
+          lcd->printAtCursor(4, 1, potValue);
+          break;
+        case SCALE_IS_EMPTY:  
+          lcd->printFirstLine("Scale is empty! ");
+          lcd->printSecondLine("                ");
+          break;
+        case PUMP_IS_EMPTY:  
+          lcd->printFirstLine("Pump is empty!  ");
+          lcd->printSecondLine("Refill pump     ");
+          lcd->printAtCursor(13, 1, int(cocktailMaker->getActiveRecipe()->getIngredientByIdx(currentPouringIngredientIdx)->getPumpIndex()));
+          break;
+        case PAUSED:
+          break;
+        case CLEAN:
+          lcd->printFirstLine("Cocktail Maker  ");
+          lcd->printSecondLine("Cleaning        ");
+          break;
+        case NO_OF_STATES:
+          /* For deleting warning */
         break;
-      case AUTO:
-        lcd->printFirstLine("AUTO Mode       ");
-        lcd->printSecondLine("ml: ");
-        lcd->lcdClearAt(7, 1);
-        lcd->printAtCursor(4, 1, potValue);
-        break;
-      case SELECT_MODE:
-        lcd->printFirstLine("Select Mode :   ");
-        lcd->printSecondLine(functionModes[potValue]);
-        break;
-      case MANUAL:
-        lcd->printFirstLine("Cocktail Maker  ");
-        lcd->printSecondLine("Manual         ");
-        break;
-      case SETUP:
-        lcd->printFirstLine("Cocktail Maker  ");
-        lcd->printSecondLine("Setup           ");
-        break;
-      case SETUP_COCKTAIL:
-        lcd->printFirstLine("Cocktail Maker  ");
-        lcd->printSecondLine("Setup Cocktail  ");
-        break;
-      case POURING:
-        lcd->printFirstLine("Pouring         ");
-        if(scaleValue < 10)
-        {
-          lcd->printAtCursor(0, 1, scaleValue);
-          lcd->printAtCursor(1, 1, "  ");
-        }
-        else if(scaleValue < 100)
-        {
-          lcd->printAtCursor(0, 1, scaleValue);
-          lcd->printAtCursor(2, 1, " ");
-        }
-        else{
-          lcd->printAtCursor(0, 1, scaleValue);
-        }
-        
-        lcd->printAtCursor(3, 1, "/");
-        lcd->printAtCursor(4, 1, potValue);
-        break;
-      case SCALE_IS_EMPTY:  
-        lcd->printFirstLine("Scale is empty! ");
-        lcd->printSecondLine("                ");
-        break;
-      case PUMP_IS_EMPTY:  
-        lcd->printFirstLine("Pump is empty!  ");
-        lcd->printSecondLine("Refill pump     ");
-        lcd->printAtCursor(13, 1, int(cocktailMaker->getActiveRecipe()->getIngredientByIdx(currentPouringIngredientIdx)->getPumpIndex()));
-        break;
-      case CLEAN:
-        lcd->printFirstLine("Cocktail Maker  ");
-        lcd->printSecondLine("Cleaning        ");
-        break;
+      }
+      lcdUpdateFlag = false;
     }
-    lcdUpdateFlag = false;
+
+    lastLoopMillis = millis();
   }
 
 #ifdef DEBUG
@@ -192,8 +208,8 @@ void OS_10mstask() {
   {
     case INIT:
       stopPumps();
-      lcdUpdateFlag = true;
       currentGlobalState = AUTO;
+      lcdUpdateFlag = true;
       break;
       
     case AUTO:
@@ -209,9 +225,14 @@ void OS_10mstask() {
 
       potReadingCounter++;
       if (potReadingCounter >= POT_READ_MS) {
-        /* What to do in loop */
         potValue = map(analogRead(POT_SELECT_PIN), 0, 1023, 4, 39) * 25;
 
+        /* If potentiometer has a new value, update on display */
+        if(previousPotValue != potValue)
+        {
+          lcdUpdateFlag = true;
+          previousPotValue = potValue;
+        }
         potReadingCounter = 0;
       }
 
@@ -234,6 +255,8 @@ void OS_10mstask() {
               currentPouringIngredientIdx = 0;
               currentPouringQtyTgt = cocktailMaker->getActiveRecipe()->getIngredientByIdx(currentPouringIngredientIdx)->getAmount() * potValue / 100;
               currentGlobalState = POURING;
+              /* Update new state on LCD*/
+              lcdUpdateFlag = true;
             }
             break;
 
@@ -246,6 +269,8 @@ void OS_10mstask() {
             previousGlobalState = currentGlobalState;
             if (lockSelectModeButton == false) {
               currentGlobalState = SELECT_MODE;
+              /* Update new state on LCD*/
+              lcdUpdateFlag = true;
               lockSelectModeButton = true;
             }
             break;
@@ -277,10 +302,14 @@ void OS_10mstask() {
         switch(button) {
           case BUTTON_OK:
             currentGlobalState = static_cast<globalState>(potValue);
+            /* Update new state on LCD*/
+            lcdUpdateFlag = true;
             break;
           case BUTTON_SELECT_MODE:
             if(lockSelectModeButton == false){
               currentGlobalState = previousGlobalState;
+              /* Update new state on LCD*/
+              lcdUpdateFlag = true;
               lockSelectModeButton = true;
             }
             break;
@@ -309,6 +338,8 @@ void OS_10mstask() {
             previousGlobalState = currentGlobalState;
             if (lockSelectModeButton == false) {
               currentGlobalState = SELECT_MODE;
+              /* Update new state on LCD*/
+              lcdUpdateFlag = true;
               lockSelectModeButton = true;
             }
             break;
@@ -337,6 +368,8 @@ void OS_10mstask() {
             previousGlobalState = currentGlobalState;
             if (lockSelectModeButton == false) {
               currentGlobalState = SELECT_MODE;
+              /* Update new state on LCD*/
+              lcdUpdateFlag = true;
               lockSelectModeButton = true;
             }
             break;
@@ -365,6 +398,8 @@ void OS_10mstask() {
             previousGlobalState = currentGlobalState;
             if (lockSelectModeButton == false) {
               currentGlobalState = SELECT_MODE;
+              /* Update new state on LCD*/
+              lcdUpdateFlag = true;
               lockSelectModeButton = true;
             }
             break;
@@ -393,6 +428,8 @@ void OS_10mstask() {
             previousGlobalState = currentGlobalState;
             if (lockSelectModeButton == false) {
               currentGlobalState = SELECT_MODE;
+              /* Update new state on LCD*/
+              lcdUpdateFlag = true;
               lockSelectModeButton = true;
             }
             break;
@@ -410,6 +447,8 @@ void OS_10mstask() {
           Serial.println(millis());
           pouringTimeoutCounter = 0;
           currentGlobalState = PUMP_IS_EMPTY;
+          /* Update new state on LCD*/
+          lcdUpdateFlag = true;
       }
 
       if(readScaleCounter % (READ_SCALE_MS ) == 0)
@@ -454,6 +493,8 @@ void OS_10mstask() {
           currentPouringIngredientIdx = 0;
           currentPouringQtyTgt = 0;
           currentGlobalState = AUTO;
+          /* Update new state on LCD*/
+          lcdUpdateFlag = true;
         }
         #endif
       }
@@ -464,6 +505,8 @@ void OS_10mstask() {
       if (scaleEmptyErrorCounter >= SCALE_EMPTY_ERROR_MS) {
         scaleEmptyErrorCounter = 0;
         currentGlobalState = AUTO;
+        /* Update new state on LCD*/
+        lcdUpdateFlag = true;
       }
       break;
     case PUMP_IS_EMPTY:
@@ -471,6 +514,8 @@ void OS_10mstask() {
       if (pumpEmptyErrorCounter >= PUMP_EMPTY_ERROR_MS) {
         pumpEmptyErrorCounter = 0;
         currentGlobalState = AUTO;
+        /* Update new state on LCD*/
+        lcdUpdateFlag = true;
       }
       break;
     case PAUSED:
@@ -480,13 +525,7 @@ void OS_10mstask() {
     default:
       break;
   }
-
-  /* Update LCD */
-  lcdUpdateCounter++;
-  if (lcdUpdateCounter >= LCD_UPDATE_MS) {
-    lcdUpdateFlag = true;
-    lcdUpdateCounter = 0;
-  }
+  
 }
 
 buttons readButtons() {
