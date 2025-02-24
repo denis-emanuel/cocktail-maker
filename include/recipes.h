@@ -57,7 +57,7 @@ class Recipe {
     private:
         String name;
         short int noOfIngredients;
-        Ingredient* ingredients[6];
+        Ingredient* ingredients[NUM_OF_PUMPS];
 
     public:
         Recipe() {}
