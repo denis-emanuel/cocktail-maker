@@ -35,6 +35,7 @@
 #define PUMP_EMPTY_ERROR_MS 1000
 #define POURING_TIMEOUT_COUNTS 7 //Seconds Aprox
 #define READ_SCALE_MS 12 
+#define CLEAN_ROUTINE_MS 5000
 
 /* Millis counters */
 #define MAIN_LOOP_MS 250
@@ -50,6 +51,7 @@ unsigned int scaleEmptyErrorCounter = 0;
 unsigned int pumpEmptyErrorCounter = 0;
 unsigned int pouringTimeoutCounter = 0;
 unsigned int readScaleCounter = 0;
+unsigned int cleanRoutineCounter = 0;
 
 /* Menu arrays */
 
@@ -75,6 +77,7 @@ int scaleValue = 0;
 unsigned int previousScaleValue = 0;
 bool lockSelectModeButton = false;
 unsigned int activePumps = 0;
+unsigned int selIngrManualMode = 0;
 
 /* AutoPouring state variables */
 unsigned int currentPouringIngredientIdx = 0;
@@ -83,6 +86,7 @@ int currentPouringQtyTgt = 0;
 /* Function prototypes */
 buttons readButtons();
 void setPump(int data);
+void startAllPumps();
 void stopPumps();
 
 void setup() {
@@ -139,8 +143,9 @@ void loop() {
           lcd->printSecondLine(functionModes[potValue]);
           break;
         case MANUAL:
-          lcd->printFirstLine("Cocktail Maker  ");
-          lcd->printSecondLine("Manual         ");
+          lcd->printFirstLine(ingredientNames[selIngrManualMode]);
+          lcd->printSecondLine("on P");
+          lcd->printAtCursor(5, 1, potValue);
           break;
         case SETUP:
           lcd->printFirstLine("Cocktail Maker  ");
@@ -181,8 +186,16 @@ void loop() {
         case PAUSED:
           break;
         case CLEAN:
-          lcd->printFirstLine("Cocktail Maker  ");
-          lcd->printSecondLine("Cleaning        ");
+          if(cleanRoutineCounter == 0 )
+          {
+            lcd->printFirstLine("Press POUR      ");
+            lcd->printSecondLine("to start Clean  ");
+          }
+          else
+          {
+            lcd->printFirstLine("Cleaning...     ");
+            lcd->printSecondLine("                ");
+          }
           break;
         case NO_OF_STATES:
           /* For deleting warning */
@@ -331,6 +344,23 @@ void OS_10mstask() {
       }
       break;
     case MANUAL:
+      /* Select what mode you want with the potentiometer */
+      potReadingCounter++;
+      if (potReadingCounter >= POT_READ_MS) {
+        /* What to do in loop */
+        potValue = map(analogRead(POT_SELECT_PIN), 0, 1023, 0, NUM_OF_PUMPS - 1);
+
+        /* If potentiometer has a new value, update on display */
+        if(previousPotValue != potValue)
+        {
+          selIngrManualMode = cocktailMaker->getActiveRecipe()->getIngredientByIdx(potValue)->getName();
+          lcdUpdateFlag = true;
+          previousPotValue = potValue;
+        }
+
+        potReadingCounter = 0;
+      }
+
       buttonsReadingCounter++;
       if (buttonsReadingCounter >= BUTTONS_READ_MS) {
         /* What to do in loop */
@@ -338,8 +368,19 @@ void OS_10mstask() {
         
         switch(button) {
           case BUTTON_OK:
+            /* If OK button was pressed and selected pump is on, turn it off */
+            if((activePumps & (1 << cocktailMaker->getActiveRecipe()->getIngredientByIdx(potValue)->getPumpIndex())) != 0)
+            {
+              stopPumps();
+            }
             break;
           case BUTTON_POUR:
+            /* If pour button was pressed and selected pump is off, turn it on */
+            if((activePumps & (1 << cocktailMaker->getActiveRecipe()->getIngredientByIdx(potValue)->getPumpIndex())) == 0)
+            {
+              Serial.println(cocktailMaker->getActiveRecipe()->getIngredientByIdx(potValue)->getPumpIndex());
+              setPump(1 << cocktailMaker->getActiveRecipe()->getIngredientByIdx(potValue)->getPumpIndex());
+            }
             break;
           case BUTTON_SELECT_MODE:
             previousGlobalState = currentGlobalState;
@@ -441,6 +482,21 @@ void OS_10mstask() {
       }
       break;
     case CLEAN:
+      if(cleanRoutineCounter != 0)
+      {
+          /* If clean routine timer expired, stop all pumps */
+          if(millis() - cleanRoutineCounter > CLEAN_ROUTINE_MS)
+          {
+            stopPumps();
+            cleanRoutineCounter = 0;
+            lcdUpdateFlag = true;
+          }
+          else
+          {
+            cleanRoutineCounter = millis();
+          }
+      }
+
       buttonsReadingCounter++;
       if (buttonsReadingCounter >= BUTTONS_READ_MS) {
         /* What to do in loop */
@@ -448,10 +504,14 @@ void OS_10mstask() {
         
         switch(button) {
           case BUTTON_OK:
-          
+            /* Go to AUTO state */
+            currentGlobalState = AUTO;
+            lcdUpdateFlag = true;
             break;
           case BUTTON_POUR:
-          
+            startAllPumps();
+            cleanRoutineCounter = millis();
+            lcdUpdateFlag = true;
             break;
           case BUTTON_SELECT_MODE:
             previousGlobalState = currentGlobalState;
@@ -575,6 +635,13 @@ void setPump(int data) {
   digitalWrite(SHIFT_REGISTER_LATCH_PIN, LOW);
   shiftOut(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, MSBFIRST, data);
   activePumps = data;
+  digitalWrite(SHIFT_REGISTER_LATCH_PIN, HIGH);
+}
+
+void startAllPumps() {
+  digitalWrite(SHIFT_REGISTER_LATCH_PIN, LOW);
+  shiftOut(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, MSBFIRST, 0x3F);
+  activePumps = 0x3F;
   digitalWrite(SHIFT_REGISTER_LATCH_PIN, HIGH);
 }
 
