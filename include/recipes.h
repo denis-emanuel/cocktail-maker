@@ -71,7 +71,6 @@ class Recipe {
         }
 
         ~Recipe() {
-            delete[] this->ingredients;
         }
 
         Ingredient* getIngredientByIdx(int index) {
@@ -81,12 +80,6 @@ class Recipe {
         short int getNumberOfIngredients() {
             return this->noOfIngredients;
         }
-};
-
-enum RecipeName {
-    GIN_TONIC,
-    HUGO,
-    NO_OF_RECIPES
 };
 
 Recipe* recipes[NO_OF_RECIPES] = {
@@ -112,6 +105,13 @@ class CocktailMaker {
             this->lcd = lcd;
             for (int i = 0; i < NUM_OF_PUMPS; i++) {
                 this->pumpAssignment[i] = IngredientName::NO_NAME;
+            }
+        }
+
+        ~CocktailMaker() {
+            // Only delete activeRecipe if we dynamically allocated it
+            if (this->activeRecipe != nullptr) {
+                delete this->activeRecipe;
             }
         }
 
