@@ -66,6 +66,31 @@ enum IngredientName {
 
     ELDERFLOWER_SYRUP,
     SIMPLE_SYRUP,
+
+    NO_OF_INGREDIENTS
+};
+
+const char* ingredientNames[NO_OF_INGREDIENTS] = {
+    "GIN             ", 
+    "RUM             ", 
+    "TEQUILA         ", 
+    "WHISKEY         ", 
+    "VERMOUTH        ", 
+    "PROSECCO        ",
+
+    "LIME JUICE      ", 
+    "LEMON JUICE     ", 
+    "ORANGE JUICE    ", 
+    "CRANBERRY JUICE ", 
+
+    "SODA            ", 
+    "SPRITE          ", 
+    "TONIC           ", 
+    "GINGER ALE      ", 
+    "COKE            ", 
+
+    "ELDERFLOWERSYRUP", 
+    "SIMPLE SYRUP    "
 };
 
 enum class Category {
