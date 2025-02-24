@@ -147,8 +147,8 @@ void loop() {
           lcd->printSecondLine("Setup           ");
           break;
         case SETUP_COCKTAIL:
-          lcd->printFirstLine("Cocktail Maker  ");
-          lcd->printSecondLine("Setup Cocktail  ");
+          lcd->printFirstLine("Let's make...   ");
+          lcd->printSecondLine(cocktailNames[potValue]);
           break;
         case POURING:
           lcd->printFirstLine("Pouring         ");
@@ -290,6 +290,13 @@ void OS_10mstask() {
       if (potReadingCounter >= POT_READ_MS) {
         /* What to do in loop */
         potValue = map(analogRead(POT_SELECT_PIN), 0, 1023, 0, NO_OF_STATES - 1);
+        
+        /* If potentiometer has a new value, update on display */
+        if(previousPotValue != potValue)
+        {
+          lcdUpdateFlag = true;
+          previousPotValue = potValue;
+        }
 
         potReadingCounter = 0;
       }
@@ -382,6 +389,23 @@ void OS_10mstask() {
       }
       break;
     case SETUP_COCKTAIL:
+
+      /* Select what cocktail you want with the potentiometer */
+      potReadingCounter++;
+      if (potReadingCounter >= POT_READ_MS) {
+        /* What to do in loop */
+        potValue = map(analogRead(POT_SELECT_PIN), 0, 1023, 0, NO_OF_RECIPES - 1);
+        
+        /* If potentiometer has a new value, update on display */
+        if(previousPotValue != potValue)
+        {
+          lcdUpdateFlag = true;
+          previousPotValue = potValue;
+        }
+
+        potReadingCounter = 0;
+      }
+
       buttonsReadingCounter++;
       if (buttonsReadingCounter >= BUTTONS_READ_MS) {
         /* What to do in loop */
@@ -389,6 +413,11 @@ void OS_10mstask() {
         
         switch(button) {
           case BUTTON_OK:
+            cocktailMaker->setRecipe((RecipeName)potValue);
+            
+            currentGlobalState = AUTO;
+            /* Update new state on LCD*/
+            lcdUpdateFlag = true;
           
             break;
           case BUTTON_POUR:

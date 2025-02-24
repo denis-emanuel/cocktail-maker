@@ -33,6 +33,16 @@ const char* functionModes[NO_OF_STATES] = {
     "CLEAN           "
 };
 
+enum RecipeName {
+    GIN_TONIC,
+    HUGO,
+    NO_OF_RECIPES
+};
+
+const char* cocktailNames[NO_OF_RECIPES] = {
+    "GIN_TONIC       ", 
+    "HUGO            "
+};
 enum IngredientName {
     NO_NAME,
     
@@ -65,6 +75,7 @@ enum class Category {
     SODA,
     OTHER
 };
+
 
 // extern Hashtable<Category, IngredientName[]> ingredientCategoryMap;
 
