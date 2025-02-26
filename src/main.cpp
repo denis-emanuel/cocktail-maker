@@ -71,13 +71,7 @@ void setup() {
   scale->begin();
 
   cocktailMaker = new CocktailMaker(*scale, *lcd);
-  #ifdef DEBUG
   cocktailMaker->setRecipe(RecipeName::HUGO);
-  #endif
-
-  #ifndef DEBUG
-  cocktailMaker->setRecipe(RecipeName::HUGO);
-  #endif
 
   currentGlobalState = INIT;
 
