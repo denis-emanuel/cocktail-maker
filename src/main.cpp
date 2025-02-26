@@ -7,37 +7,13 @@
 #include "../include/lcd.h"
 #include "../include/scale.h"
 
-/* Weight sensor pins */
-#define BUTTONS_PIN A0
-#define POT_SELECT_PIN A1
-#define POT_VALUE_AUTO_MAX 999
-#define POT_VALUE_AUTO_MIN 100
-
-/* Shift register pins */
-#define SHIFT_REGISTER_DATA_PIN 8
-#define SHIFT_REGISTER_LATCH_PIN 9
-#define SHIFT_REGISTER_CLOCK_PIN 10
-
-/* Timers */ // Divide by OStaskMS (12 = 120ms)
-#define SCALE_READ_MS 20
-#define BUTTONS_READ_MS 2
-#define POT_READ_MS 10
-#define LCD_UPDATE_MS 10
-#define SCALE_EMPTY_ERROR_MS 300
-#define PUMP_EMPTY_ERROR_MS 1000
-#define POURING_TIMEOUT_COUNTS 7 //Seconds Aprox
-#define READ_SCALE_MS 12 
-#define CLEAN_ROUTINE_MS 5000
-
-/* Millis counters */
-#define MAIN_LOOP_MS 100
-unsigned long lastLoopMillis = 0;
-
-/* Configuration */
-unsigned int buttonsReadingCounter = 0;
+/* Thresholds */
 const unsigned int BUTTONS_THRESHOLDS[NO_BUTTON] = {100, 550, 700};
-unsigned int potReadingCounter = 0;
 const unsigned int POT_THRESHOLDS[NO_BUTTON] = {200, 400, 600};
+
+/* Counters */
+unsigned int buttonsReadingCounter = 0;
+unsigned int potReadingCounter = 0;
 unsigned int lcdUpdateCounter = 0;
 unsigned int scaleEmptyErrorCounter = 0;
 unsigned int pumpEmptyErrorCounter = 0;
@@ -56,29 +32,23 @@ ScaleController* scale;
 /* Flags */
 static bool lcdUpdateFlag = true;
 
-#ifdef DEBUG
-bool debug_print_flag = false;
-#endif
-
 /* Global Variables */
 unsigned int potValue = 0;
 unsigned int previousPotValue = 0;
+
 int scaleValue = 0;
 unsigned int previousScaleValue = 0;
+
+/* Locks */
 bool lockSelectModeButton = false;
 bool lockOkButton = false;
-unsigned int activePumps = 0;
-unsigned int selIngrManualMode = 0;
 
 /* AutoPouring state variables */
+unsigned long lastLoopMillis = 0;
 unsigned int currentPouringIngredientIdx = 0;
+unsigned int activePumps = 0;
+unsigned int selIngrManualMode = 0;
 int currentPouringQtyTgt = 0;
-
-/* Function prototypes */
-buttons readButtons();
-void setPump(int data);
-void startAllPumps();
-void stopPumps();
 
 void setup() {
   pinMode(BUTTONS_PIN, INPUT);
