@@ -13,7 +13,7 @@ class Ingredient {
 
     public:
         Ingredient() {
-            this->name = IngredientName::NO_NAME;
+            this->name = IngredientName::NO_INGREDIENT;
             this->amount_percentage = 0;
             this->pumpIndex = -1;
         }
@@ -53,6 +53,8 @@ Ingredient** hugo = new Ingredient*[HUGO_INGREDIENTS] {
     new Ingredient(IngredientName::SPRITE, 30),
 };
 
+Ingredient* emptyIngredient = new Ingredient(IngredientName::NO_INGREDIENT, 0);
+
 class Recipe {
     private:
         String name;
@@ -74,6 +76,9 @@ class Recipe {
         }
 
         Ingredient* getIngredientByIdx(int index) {
+            if(index >= this->noOfIngredients) {
+                return emptyIngredient;
+            }
             return this->ingredients[index];
         }
 
@@ -104,7 +109,7 @@ class CocktailMaker {
             this->scale = scale;
             this->lcd = lcd;
             for (int i = 0; i < NUM_OF_PUMPS; i++) {
-                this->pumpAssignment[i] = IngredientName::NO_NAME;
+                this->pumpAssignment[i] = IngredientName::NO_INGREDIENT;
             }
         }
 
@@ -118,7 +123,7 @@ class CocktailMaker {
         void assignPumpsForRecipe() {
             IngredientName newPumpAssignment[NUM_OF_PUMPS];
             for (int i = 0; i < NUM_OF_PUMPS; i++) {
-                newPumpAssignment[i] = IngredientName::NO_NAME;
+                newPumpAssignment[i] = IngredientName::NO_INGREDIENT;
             }
 
             bool isAlreadyAssignedToPump[this->activeRecipe->getNumberOfIngredients()] = {false};
@@ -126,7 +131,7 @@ class CocktailMaker {
             // reuse existing pump assignments
             // loop through ingredients:
             for (int ingredientIdx = 0; ingredientIdx < this->activeRecipe->getNumberOfIngredients(); ingredientIdx++) {
-                if (this->activeRecipe->getIngredientByIdx(ingredientIdx)->getName() != IngredientName::NO_NAME) {
+                if (this->activeRecipe->getIngredientByIdx(ingredientIdx)->getName() != IngredientName::NO_INGREDIENT) {
                     // check if ingredient is already assigned to a pump
                     // loop through pump assignments
                     for (int pumpIdx = 0; pumpIdx < NUM_OF_PUMPS; pumpIdx++) {
@@ -140,10 +145,10 @@ class CocktailMaker {
             }
 
             for (int ingredientIdx = 0; ingredientIdx < this->activeRecipe->getNumberOfIngredients(); ingredientIdx++) {
-                if (!isAlreadyAssignedToPump[ingredientIdx] && this->activeRecipe->getIngredientByIdx(ingredientIdx)->getName() != IngredientName::NO_NAME) {
+                if (!isAlreadyAssignedToPump[ingredientIdx] && this->activeRecipe->getIngredientByIdx(ingredientIdx)->getName() != IngredientName::NO_INGREDIENT) {
                     // loop through pump assignments
                     for (int pumpIdx = 0; pumpIdx < NUM_OF_PUMPS; pumpIdx++) {
-                        if (newPumpAssignment[pumpIdx] == IngredientName::NO_NAME) {
+                        if (newPumpAssignment[pumpIdx] == IngredientName::NO_INGREDIENT) {
                             newPumpAssignment[pumpIdx] = this->activeRecipe->getIngredientByIdx(ingredientIdx)->getName();
                             this->activeRecipe->getIngredientByIdx(ingredientIdx)->setPumpIndex(pumpIdx);
                             break;
@@ -184,6 +189,5 @@ class CocktailMaker {
             }
         }
 };
-
 
 #endif

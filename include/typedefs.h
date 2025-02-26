@@ -13,23 +13,26 @@ enum buttons {
 enum globalState {
     AUTO,
     MANUAL,
-    SETUP,
     SETUP_COCKTAIL,
     CLEAN,
+
     NO_OF_STATES,
+
     INIT,
     POURING,
     SCALE_IS_EMPTY,
     PUMP_IS_EMPTY,
     PAUSED,
-    SELECT_MODE
+    SELECT_MODE,
+    PUMP_PREVIEW,
+
+    NO_OF_GLOBAL_STATES
 };
 
 const char* functionModes[NO_OF_STATES] = {
     "AUTO            ", 
     "MANUAL          ", 
-    "SETUP           ", 
-    "SETUP_COCKTAIL  ", 
+    "CHOOSE COCKTAIL ", 
     "CLEAN           "
 };
 
@@ -40,12 +43,10 @@ enum RecipeName {
 };
 
 const char* cocktailNames[NO_OF_RECIPES] = {
-    "GIN_TONIC       ", 
+    "GIN TONIC       ", 
     "HUGO            "
 };
 enum IngredientName {
-    NO_NAME,
-    
     GIN,
     RUM,
     TEQUILA,
@@ -67,7 +68,8 @@ enum IngredientName {
     ELDERFLOWER_SYRUP,
     SIMPLE_SYRUP,
 
-    NO_OF_INGREDIENTS
+    NO_INGREDIENT,
+    NO_OF_INGREDIENTS,
 };
 
 const char* ingredientNames[NO_OF_INGREDIENTS] = {
@@ -90,7 +92,8 @@ const char* ingredientNames[NO_OF_INGREDIENTS] = {
     "COKE            ", 
 
     "ELDERFLOWERSYRUP", 
-    "SIMPLE SYRUP    "
+    "SIMPLE SYRUP    ",
+    "NO INGREDIENT   "
 };
 
 enum class Category {
@@ -100,32 +103,5 @@ enum class Category {
     SODA,
     OTHER
 };
-
-
-// extern Hashtable<Category, IngredientName[]> ingredientCategoryMap;
-
-// void initializeIngredientCategoryMap() {
-//     ingredientCategoryMap.put(Category::ALCOHOL, {
-//         IngredientName::GIN,
-//         IngredientName::RUM,
-//         IngredientName::TEQUILA,
-//         IngredientName::WHISKEY,
-//         IngredientName::VERMOUTH
-//     });
-
-//     ingredientCategoryMap.put(Category::SYRUP, {
-//         IngredientName::LIME_JUICE,
-//         IngredientName::LEMON_JUICE,
-//         IngredientName::ORANGE_JUICE,
-//         IngredientName::CRANBERRY_JUICE
-//     });
-
-//     ingredientCategoryMap.put(Category::SODA, {
-//         IngredientName::SODA,
-//         IngredientName::TONIC,
-//         IngredientName::GINGER_ALE,
-//         IngredientName::COKE
-//     });
-// };
 
 #endif
