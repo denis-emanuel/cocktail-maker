@@ -8,7 +8,4 @@
         "statusBar.foreground": "#000000",
         "tab.activeBackground": "#3186a0",
     },
-    "C_Cpp.codeAnalysis.clangTidy.checks.disabled": [
-        "clang-diagnostic-error"
-    ],
 }
