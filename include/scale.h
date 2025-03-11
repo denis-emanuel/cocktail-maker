@@ -8,10 +8,15 @@ class ScaleController
 {
 private:
     HX711 scale;
-    unsigned int readingCounter = 0;
+    static unsigned int readingCounter;
+    static int weight;
 
 public:
-    ScaleController() {}
+    ScaleController()
+    {
+        this->weight = 0;
+        this->readingCounter = 0;
+    }
 
     void begin()
     {
@@ -21,16 +26,21 @@ public:
         this->scale.tare();
     }
 
-    int read()
+    void update(short int units)
     {
         if (this->scale.is_ready())
         {
-            return this->scale.get_units(10);
+            this->weight = this->scale.get_units(units);
         }
         else
         {
-            return -1;
+            this->weight = -1;
         }
+    }
+
+    int getWeight()
+    {
+        return this->weight;
     }
 
     void tare()
@@ -41,7 +51,6 @@ public:
     void incrementReadingCounter()
     {
         this->readingCounter++;
-        Serial.println("Reading counter incremented");
     }
 
     int getReadingCounter()

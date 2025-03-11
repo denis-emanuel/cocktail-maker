@@ -238,7 +238,7 @@ void OS_10mstask()
       case BUTTON_OK:
         if (lockOkButton == false)
         {
-          scaleValue = scale->read();
+          scaleValue = scale->getWeight();
           if (scaleValue < 10)
           {
             currentGlobalState = SCALE_IS_EMPTY;
@@ -610,7 +610,7 @@ void OS_10mstask()
 
     if (readScaleCounter % (READ_SCALE_MS) == 0)
     {
-      scaleValue = scale->read();
+      scaleValue = scale->getWeight();
       if (int(previousScaleValue) == scaleValue)
       {
         pouringTimeoutCounter++;
