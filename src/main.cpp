@@ -14,6 +14,7 @@ const unsigned int POT_THRESHOLDS[NO_BUTTON] = {200, 400, 600};
 /* Counters */
 unsigned int buttonsReadingCounter = 0;
 unsigned int potReadingCounter = 0;
+unsigned int scaleRefreshCounter = 0;
 unsigned int lcdUpdateCounter = 0;
 unsigned int scaleEmptyErrorCounter = 0;
 unsigned int pumpEmptyErrorCounter = 0;
@@ -31,6 +32,7 @@ ScaleController *scale;
 
 /* Flags */
 static bool lcdUpdateFlag = true;
+static bool scaleUpdateFlag = true;
 
 /* Global Variables */
 unsigned int potValue = 0;
@@ -197,6 +199,12 @@ void loop()
         break;
       }
     }
+
+    if (scaleUpdateFlag == true)
+    {
+      scale->update(1);
+      scaleUpdateFlag = false;
+    }
     lastLoopMillis = millis();
   }
 }
@@ -226,6 +234,13 @@ void OS_10mstask()
         previousPotValue = potValue;
       }
       potReadingCounter = 0;
+    }
+
+    scaleRefreshCounter++;
+    if (scaleRefreshCounter >= SCALE_REFRESH_MS)
+    {
+      scaleUpdateFlag = true;
+      scaleRefreshCounter = 0;
     }
 
     buttonsReadingCounter++;
@@ -398,7 +413,6 @@ void OS_10mstask()
         /* If pour button was pressed and selected pump is off, turn it on */
         if ((activePumps & (1 << cocktailMaker->getActiveRecipe()->getIngredientByIdx(potValue)->getPumpIndex())) == 0)
         {
-          Serial.println(cocktailMaker->getActiveRecipe()->getIngredientByIdx(potValue)->getPumpIndex());
           setPump(1 << cocktailMaker->getActiveRecipe()->getIngredientByIdx(potValue)->getPumpIndex());
         }
         break;
@@ -597,6 +611,7 @@ void OS_10mstask()
       buttonsReadingCounter = 0;
     }
     break;
+
   case POURING:
     lcdUpdateFlag = true;
     readScaleCounter++;
@@ -608,9 +623,10 @@ void OS_10mstask()
       lcdUpdateFlag = true;
     }
 
-    if (readScaleCounter % (READ_SCALE_MS) == 0)
+    if (readScaleCounter >= (READ_SCALE_MS))
     {
       scaleValue = scale->getWeight();
+      scaleUpdateFlag = true;
       if (int(previousScaleValue) == scaleValue)
       {
         pouringTimeoutCounter++;
@@ -646,6 +662,8 @@ void OS_10mstask()
         /* Update new state on LCD*/
         lcdUpdateFlag = true;
       }
+
+      readScaleCounter = 0;
     }
     break;
 

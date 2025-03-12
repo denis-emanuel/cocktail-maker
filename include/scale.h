@@ -8,14 +8,12 @@ class ScaleController
 {
 private:
     HX711 scale;
-    static unsigned int readingCounter;
-    static int weight;
+    int weight;
 
 public:
     ScaleController()
     {
         this->weight = 0;
-        this->readingCounter = 0;
     }
 
     void begin()
@@ -30,11 +28,11 @@ public:
     {
         if (this->scale.is_ready())
         {
-            this->weight = this->scale.get_units(units);
-        }
-        else
-        {
-            this->weight = -1;
+            int weightAux = this->scale.get_units(units);
+            if (weightAux >= 0)
+            {
+                this->weight = weightAux;
+            }
         }
     }
 
@@ -45,22 +43,8 @@ public:
 
     void tare()
     {
+        this->weight = 0;
         this->scale.tare();
-    }
-
-    void incrementReadingCounter()
-    {
-        this->readingCounter++;
-    }
-
-    int getReadingCounter()
-    {
-        return this->readingCounter;
-    }
-
-    void resetReadingCounter()
-    {
-        this->readingCounter = 0;
     }
 };
 
