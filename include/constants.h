@@ -4,12 +4,13 @@
 /* Timers */ // Divide by OStaskMS (12 = 120ms)
 #define SCALE_READ_MS 20
 #define BUTTONS_READ_MS 2
+#define SCALE_REFRESH_MS 100
 #define POT_READ_MS 10
 #define LCD_UPDATE_MS 10
 #define SCALE_EMPTY_ERROR_MS 300
 #define PUMP_EMPTY_ERROR_MS 1000
-#define POURING_TIMEOUT_COUNTS 7 //Seconds Aprox
-#define READ_SCALE_MS 12 
+#define POURING_TIMEOUT_COUNTS 400 // *20ms
+#define READ_SCALE_MS 2
 #define CLEAN_ROUTINE_MS 5000
 #define OS_TASK_PERIOD_MS 10
 #define MAIN_LOOP_MS 100
