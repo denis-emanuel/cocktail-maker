@@ -3,14 +3,16 @@
 
 #include <Hashtable.h>
 
-enum buttons {
+enum buttons
+{
     BUTTON_OK,
     BUTTON_POUR,
     BUTTON_SELECT_MODE,
     NO_BUTTON
 };
 
-enum globalState {
+enum globalState
+{
     AUTO,
     MANUAL,
     SETUP_COCKTAIL,
@@ -29,30 +31,37 @@ enum globalState {
     NO_OF_GLOBAL_STATES
 };
 
-const char* functionModes[NO_OF_STATES] = {
-    "AUTO            ", 
-    "MANUAL          ", 
-    "CHOOSE COCKTAIL ", 
-    "CLEAN           "
-};
+const char *functionModes[NO_OF_STATES] = {
+    "AUTO            ",
+    "MANUAL          ",
+    "CHOOSE COCKTAIL ",
+    "CLEAN           "};
 
-enum RecipeName {
+enum RecipeName
+{
     GIN_TONIC,
     HUGO,
+    APEROL_SPRITZ,
+    MOJITO,
     NO_OF_RECIPES
 };
 
-const char* cocktailNames[NO_OF_RECIPES] = {
-    "GIN TONIC       ", 
-    "HUGO            "
-};
-enum IngredientName {
+const char *cocktailNames[NO_OF_RECIPES] = {
+    "GIN TONIC       ",
+    "HUGO            ",
+    "APEROL SPRITZ   ",
+    "MOJITO          "};
+
+enum IngredientName
+{
     GIN,
     RUM,
+    WHITE_RUM,
     TEQUILA,
     WHISKEY,
     VERMOUTH,
     PROSECCO,
+    APEROL,
 
     LIME_JUICE,
     LEMON_JUICE,
@@ -72,31 +81,33 @@ enum IngredientName {
     NO_OF_INGREDIENTS,
 };
 
-const char* ingredientNames[NO_OF_INGREDIENTS] = {
-    "GIN             ", 
-    "RUM             ", 
-    "TEQUILA         ", 
-    "WHISKEY         ", 
-    "VERMOUTH        ", 
+const char *ingredientNames[NO_OF_INGREDIENTS] = {
+    "GIN             ",
+    "RUM             ",
+    "WHITE RUM       ",
+    "TEQUILA         ",
+    "WHISKEY         ",
+    "VERMOUTH        ",
     "PROSECCO        ",
+    "APEROL          ",
 
-    "LIME JUICE      ", 
-    "LEMON JUICE     ", 
-    "ORANGE JUICE    ", 
-    "CRANBERRY JUICE ", 
+    "LIME JUICE      ",
+    "LEMON JUICE     ",
+    "ORANGE JUICE    ",
+    "CRANBERRY JUICE ",
 
-    "SODA            ", 
-    "SPRITE          ", 
-    "TONIC           ", 
-    "GINGER ALE      ", 
-    "COKE            ", 
+    "SODA            ",
+    "SPRITE          ",
+    "TONIC           ",
+    "GINGER ALE      ",
+    "COKE            ",
 
-    "ELDERFLOWERSYRUP", 
+    "ELDERFLOWERSYRUP",
     "SIMPLE SYRUP    ",
-    "NO INGREDIENT   "
-};
+    "NO INGREDIENT   "};
 
-enum class Category {
+enum class Category
+{
     ALCOHOL,
     SYRUP,
     JUICE,

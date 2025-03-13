@@ -21,6 +21,8 @@
 /* Number of ingredients for recipes */
 #define GIN_TONIC_INGREDIENTS 3
 #define HUGO_INGREDIENTS 3
+#define APEROL_SPRITZ_INGREDIENTS 3
+#define MOJITO_INGREDIENTS 3
 
 /* Weight sensor */
 #define LOADCELL_DOUT_PIN 2

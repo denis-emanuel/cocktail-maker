@@ -97,6 +97,7 @@ void loop()
         lcd->printSecondLine("Initializing");
         lcdUpdateFlag = false;
         break;
+
       case AUTO:
         if (potValue != 0)
         {
@@ -107,6 +108,7 @@ void loop()
           lcdUpdateFlag = false;
         }
         break;
+
       case SELECT_MODE:
         if ((potValue >= 0) && (potValue < NO_OF_STATES))
         {
@@ -115,6 +117,7 @@ void loop()
           lcdUpdateFlag = false;
         }
         break;
+
       case MANUAL:
         if ((potValue >= 0) && (potValue < NO_OF_INGREDIENTS))
         {
@@ -124,16 +127,18 @@ void loop()
           lcdUpdateFlag = false;
         }
         break;
+
       case PUMP_PREVIEW:
         if ((potValue >= 0) && (potValue < NO_OF_INGREDIENTS))
         {
           lcd->printFirstLine("On Pump ");
-          lcd->printAtCursor(8, 0, potValue + 1);
+          lcd->printAtCursor(8, 0, cocktailMaker->getActiveRecipe()->getIngredientByIdx(potValue)->getPumpIndex() + 1);
           lcd->printAtCursor(9, 0, " set    ");
           lcd->printSecondLine(ingredientNames[selIngrManualMode]);
           lcdUpdateFlag = false;
         }
         break;
+
       case SETUP_COCKTAIL:
         if ((potValue >= 0) && (potValue < NO_OF_RECIPES))
         {
@@ -142,6 +147,7 @@ void loop()
           lcdUpdateFlag = false;
         }
         break;
+
       case POURING:
         lcd->printFirstLine("Pouring         ");
         if (scaleValue < 10)
@@ -163,11 +169,13 @@ void loop()
         lcd->printAtCursor(4, 1, potValue);
         lcdUpdateFlag = false;
         break;
+
       case SCALE_IS_EMPTY:
         lcd->printFirstLine("Scale is empty! ");
         lcd->printSecondLine("                ");
         lcdUpdateFlag = false;
         break;
+
       case PUMP_IS_EMPTY:
         lcd->printFirstLine("Pump is empty!  ");
         lcd->printSecondLine("Refill pump     ");
@@ -175,9 +183,11 @@ void loop()
         lcd->printAtCursor(14, 1, "  ");
         lcdUpdateFlag = false;
         break;
+
       case PAUSED:
         lcdUpdateFlag = false;
         break;
+
       case CLEAN:
         if (cleanRoutineCounter == 0)
         {
@@ -191,6 +201,7 @@ void loop()
         }
         lcdUpdateFlag = false;
         break;
+
       case NO_OF_STATES:
         /* For deleting warning */
         break;
@@ -221,7 +232,6 @@ void OS_10mstask()
     break;
 
   case AUTO:
-
     potReadingCounter++;
     if (potReadingCounter >= POT_READ_MS)
     {
@@ -298,8 +308,8 @@ void OS_10mstask()
 
       buttonsReadingCounter = 0;
     }
-
     break;
+
   case SELECT_MODE:
     /* Select what mode you want with the potentiometer */
     potReadingCounter++;
@@ -367,6 +377,7 @@ void OS_10mstask()
       buttonsReadingCounter = 0;
     }
     break;
+
   case MANUAL:
     potReadingCounter++;
     if (potReadingCounter >= POT_READ_MS)
@@ -435,16 +446,18 @@ void OS_10mstask()
       buttonsReadingCounter = 0;
     }
     break;
+
   case PUMP_PREVIEW:
     potReadingCounter++;
     if (potReadingCounter >= POT_READ_MS)
     {
-      potValue = map(analogRead(POT_SELECT_PIN), 0, 960, 0, NUM_OF_PUMPS - 1);
+      // map potentiometer value to number of ingredients not to number of pumps
+      potValue = map(analogRead(POT_SELECT_PIN), 0, 960, 0, cocktailMaker->getActiveRecipe()->getNumberOfIngredients() - 1);
 
       /* If potentiometer has a new value, update on display */
       if (previousPotValue != potValue)
       {
-        if (potValue >= 0 && potValue < NUM_OF_PUMPS)
+        if (potValue >= 0 && potValue < cocktailMaker->getActiveRecipe()->getNumberOfIngredients())
         {
           selIngrManualMode = (unsigned int)(cocktailMaker->getActiveRecipe()->getIngredientByIdx(potValue)->getName());
           if (selIngrManualMode >= NO_OF_INGREDIENTS || selIngrManualMode < 0)
@@ -556,6 +569,7 @@ void OS_10mstask()
       buttonsReadingCounter = 0;
     }
     break;
+
   case CLEAN:
     if (cleanRoutineCounter != 0)
     {
